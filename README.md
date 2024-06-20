@@ -39,16 +39,13 @@ pytest dinc_ensemble
 ```bash
 dinc-ensemble --help
 ```
-Check more details for installing dinc-ensemble [here]().
+Check more details for installing dinc-ensemble [here](https://github.com/KavrakiLab/dinc-ensemble/tree/first_test_pr/installation).
 
 ### Run dinc-ensemble CLI
 
 - Try running the command-line interface. 
-
 `dinc-ensemble dock {LIGAND_PATH} [{RECEPTOR_PATH}] {OUTPUT_DIR}`
-
 - 1OHR xample:
-
 `dinc-ensemble dock ./sample-data/small_tests_data/1ohr_ligand.mol2 ./sample-data/small_tests_data/1ohr_receptor.pdb ./tmp_test_out --replica-num 1`
 
 
