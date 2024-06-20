@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0"
+    />
+    <title>PDBe Molstar plugin - Basic</title>
+
+    <!-- Molstar CSS & JS -->
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="https://cdn.jsdelivr.net/npm/pdbe-molstar@3.2.0/build/pdbe-molstar.css"
+    />
+    <script
+      type="text/javascript"
+      src="https://cdn.jsdelivr.net/npm/pdbe-molstar@3.2.0/build/pdbe-molstar-plugin.js"
+    ></script>
+
+    <style>
+      #myViewer {
+        float: left;
+        width: 90%;
+        height: 500px;
+        position: relative;
+        margin: 20px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <h3>PDBe Mol* JS Plugin Demo</h3>
+
+    <!-- Molstar container -->
+    <div id="myViewer"></div>
+
+    <script>
+      // Create plugin instance
+      const viewerInstance = new PDBeMolstarPlugin();
+
+      const structures = [ 
+      {
+
+            customData: {
+        url: ../data/ensemble_example/ER/test_runs/ensemble/5dtv_pdbfixed_aligned.pdb,
+        format: {'pdb'},
+        binary: false,
+    }
+    }
+,
+            customData: {
+        url: ../data/ensemble_example/ER/test_runs/ensemble/1a52_pdbfixed_aligned.pdb,
+        format: {'pdb'},
+        binary: false,
+    }
+    }
+,
+            customData: {
+        url: ../data/ensemble_example/ER/test_runs/ensemble/5ufx_pdbfixed_aligned.pdb,
+        format: {'pdb'},
+        binary: false,
+    }
+    }
+,
+            customData: {
+        url: ../data/ensemble_example/ER/test_runs/ensemble/7msa_pdbfixed_aligned.pdb,
+        format: {'pdb'},
+        binary: false,
+    }
+    }
+      }]
+
+      // Set options (uncomment lines to explore various options)
+      const options = {
+        // DATA
+        // moleculeId: '1cbs',
+         ...structures[0]
+        // assemblyId: '1',
+        // defaultPreset: 'default', // default | unitcell | all-models |supercell
+        // ligandView: { label_comp_id: 'REA' },
+        // superposition
+        // selection: {
+        //   data: [
+        //     {
+        //       struct_asym_id: 'A',
+        //       start_residue_number: 1,
+        //       end_residue_number: 20,
+        //       color: '#ffff00',
+        //     },
+        //   ],
+        //   nonSelectedColor: '#ddccbb',
+        // },
+
+        // APPEARANCE
+        // visualStyle: 'cartoon', // cartoon | ball-and-stick | carbohydrate | ellipsoid | gaussian-surface | molecular-surface | point | putty | spacefill
+        // hideStructure: ['het', 'water'],
+        // loadMaps: true,
+        // mapSettings: { '2fo-fc': { opacity: 0.8, wireframe: true } },
+        // bgColor: { r: 60, g: 0, b: 100 },
+        // highlightColor: '#ffff00',
+        // selectColor: '#77bbff',
+        // lighting: 'flat', // flat | matte | glossy | metallic | plastic
+
+        // BEHAVIOR
+        // validationAnnotation: true,
+        // domainAnnotation: true,
+        // symmetryAnnotation: true,
+        // pdbeUrl: 'https://www.ebi.ac.uk/pdbe/',
+        // encoding: 'cif', // cif | bcif
+        // lowPrecisionCoords: true,
+        // selectInteraction: false,
+        // granularity: 'chain', // element | residue | chain | entity | model | operator | structure | elementInstances | residueInstances | chainInstances
+        // subscribeEvents: true,
+
+        // INTERFACE
+        // hideControls: true,
+        // hideCanvasControls: ['expand', 'selection', 'animation', 'controlToggle', 'controlInfo']
+        // sequencePanel: true,
+        // pdbeLink: false,
+        // loadingOverlay: true,
+        // expanded: true,
+        // landscape: true,
+        // reactive: true,
+      };
+
+      // Get element from HTML/Template to place the viewer
+      const viewerContainer = document.getElementById('myViewer');
+
+      // Call render method to display the 3D view
+      viewerInstance.render(viewerContainer, options);
+
+      //Load additional structures
+      let structIndex = 1;
+      viewerInstance.events.loadComplete.subscribe(() => {
+        if(structIndex === structures.length) return;
+        viewerInstance.visual.update(structures[structIndex], false);
+        structIndex++;
+      });
+    </script>
+  </body>
+</html>

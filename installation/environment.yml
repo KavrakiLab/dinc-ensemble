@@ -1,0 +1,28 @@
+name: dinc-ensemble
+channels:
+  - defaults
+  - anaconda
+  - bioconda
+  - conda-forge
+dependencies:
+  - python ==3.11
+  - pyyaml ==6.0.1
+  - pytest ==7.4.0
+  - git ==2.40.1
+  - numpy ==1.26.4
+  - matplotlib ==3.8.4
+  - psutil ==5.9.0
+  - typer ==0.9.0
+  - rdkit >=2023.09.4
+  - pandas ==2.2.1
+  - conda-forge::biopython ==1.83
+  - conda-forge::openbabel ==3.1.1
+  - conda-forge::vina ==1.2.5
+  - xorg-libxrender ==0.9.11
+  - scipy ==1.11.3
+  - IPython ==8.20.0
+  - typer ==0.9.0
+  - conda-forge::pymol-open-source ==3.0.0
+  - pip:
+    - PeptideBuilder ==1.1.0
+    - git+https://github.com/AnjaConev/autodocktools-prepare-py3k@master
