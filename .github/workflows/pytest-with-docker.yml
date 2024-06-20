@@ -1,6 +1,9 @@
 name: Pytest with Docker environment
 # workflow triggered by any push on any branch
-on: 
+on:
+  push:
+    paths:
+      - 'dinc_ensemble/**'
   pull_request:
     paths:
       - 'dinc_ensemble/**'
