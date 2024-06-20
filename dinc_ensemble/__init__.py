@@ -1,9 +1,7 @@
 from .ligand.io import load_ligand, write_ligand
 from .ligand.process import PREPROCESS_MOLECULE_OPTIONS, \
                             preprocess_molecule
-
 from .receptor.io import load_receptor
-
 from .ligand.core.atom import Atom
 from .ligand.core.bond import Bond
 
