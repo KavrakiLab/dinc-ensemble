@@ -6,7 +6,6 @@
 
 - `dinc_ensemble`
 The python package with all the modules.
-Better described here: 
 
 - `installation`
 Different install options and files including conda/mamba install, pulling or building a docker image.
