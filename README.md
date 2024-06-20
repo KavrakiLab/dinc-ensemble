@@ -39,7 +39,7 @@ pytest dinc_ensemble
 ```bash
 dinc-ensemble --help
 ```
-Check more details for installing dinc-ensemble [here](https://github.com/KavrakiLab/dinc-ensemble/tree/first_test_pr/installation).
+Check more details for installing dinc-ensemble [here](https://github.com/KavrakiLab/dinc-ensemble/tree/main/installation).
 
 ### Run dinc-ensemble CLI
 
