@@ -29,7 +29,7 @@ jobs:
     - name: Git symlink
       run: ln -s /opt/conda/envs/dinc-ensemble/bin/git /usr/bin/git
     - name: Git safe directory
-      run: git config --global --add safe.directory /__w/dinc-ensemble/dinc_ensemble
+      run: git config --global --add safe.directory /__w/dinc-ensemble/dinc-ensemble
     - name: Sparse checkout 
       uses: snow-actions/sparse-checkout@v1.2.0
       with:
