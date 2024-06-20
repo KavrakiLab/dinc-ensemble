@@ -37,5 +37,5 @@ jobs:
     - name: Check the checkout
       run: echo $(ls)
     - name: Pytest!
-      run: /opt/conda/envs/dinc_ensemble/bin/pytest ./dinc_ensemble
+      run: /opt/conda/envs/dinc-ensemble/bin/pytest ./dinc_ensemble
     
