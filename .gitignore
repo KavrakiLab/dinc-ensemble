@@ -175,3 +175,9 @@ cython_debug/
 
 # Built Visual Studio Code Extensions
 *.vsix
+
+
+# Data files (too many)
+
+dinc_ensemble/tests/data/v2020-other-PL/
+sample-data/v2020-other-PL/
