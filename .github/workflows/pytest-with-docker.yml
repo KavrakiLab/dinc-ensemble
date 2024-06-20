@@ -3,7 +3,7 @@ name: Pytest with Docker environment
 on: 
   pull_request:
     paths:
-      - 'dinc-ensemble/**'
+      - 'dinc_ensemble/**'
 jobs:
   build-test:
     name: Pytest in Docker environment
@@ -13,7 +13,7 @@ jobs:
     container:
       image: docker://ac121/dinc-ensemble:latest
       env:
-        ENV_NAME: DINC-Ensemble
+        ENV_NAME: dinc-ensemble
       options: --user root
       
     # checkout your code from your repository
@@ -22,17 +22,17 @@ jobs:
     - name: Check loction
       run: echo $(pwd) && echo $(ls)
     - name: Update PATH
-      run: export PATH=$PATH:/opt/conda/envs/DINC-Ensemble/bin
+      run: export PATH=$PATH:/opt/conda/envs/dinc-ensemble/bin
     - name: Git symlink
-      run: ln -s /opt/conda/envs/DINC-Ensemble/bin/git /usr/bin/git
+      run: ln -s /opt/conda/envs/dinc-ensemble/bin/git /usr/bin/git
     - name: Git safe directory
-      run: git config --global --add safe.directory /__w/dinc-ensemble/dinc-ensemble
+      run: git config --global --add safe.directory /__w/dinc-ensemble/dinc_ensemble
     - name: Sparse checkout 
       uses: snow-actions/sparse-checkout@v1.2.0
       with:
-        patterns: ./dinc-ensemble/
+        patterns: ./dinc_ensemble/
     - name: Check the checkout
       run: echo $(ls)
     - name: Pytest!
-      run: /opt/conda/envs/DINC-Ensemble/bin/pytest ./dinc-ensemble
+      run: /opt/conda/envs/dinc_ensemble/bin/pytest ./dinc_ensemble
     
