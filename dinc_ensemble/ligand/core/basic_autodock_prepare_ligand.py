@@ -178,49 +178,32 @@ def has_special_characters(s, pat=re.compile('[@_!#$%^&*()<>?/\|}{~:]')):
 def assign_new_names(atoms):
     
     unique_atoms_cnt = {}
-    if verbose: print("ASSIGNING NEW NAMES")
     for i, at in enumerate(atoms):
-        
+        # make sure at.name does not have special characters, if it does avoid them
         #if has_special_characters(at.name):
         #    raise ValueError("Molecule has atom name with special characters: {}".format(at.name))
         name = at.name
-        alpha_name = ""
-        numeric_name = ""
-        for c in name:
-            if c.isalpha():
-                alpha_name+=c
-            if c.isnumeric():
-                numeric_name+=c
-        if alpha_name not in unique_atoms_cnt:
-            unique_atoms_cnt[alpha_name] = 0
-            at.name = alpha_name
+        new_name = None
+        if name not in unique_atoms_cnt:
+            unique_atoms_cnt[name] = 0
+            new_name = name
         else:
-            cnt = unique_atoms_cnt[alpha_name] 
-            new_name = alpha_name + str(cnt)
-            if len(new_name) <=3:
-                at.name = new_name
-                unique_atoms_cnt[alpha_name] = cnt+1
-            # if atom name is longer than 3 characters this can be a problem
+            cnt = unique_atoms_cnt[name] 
+            new_name = name + str(cnt)
+            if len(new_name) <= 3:
+                unique_atoms_cnt[name] = cnt+1
             else:
-                sec_char = new_name[1]
-                # if second char is alpha we can increase it
-                # if second char is numeric - we reached cnt 99 for given name probably - switch to chars
-                if sec_char.isnumeric():
-                    sec_char = chr(ord("A")-1)
+                name_base = new_name[:2]
+                name_ext = new_name[2]
+                next_ext = name_ext
+                new_name = name_base+name_ext
+                exists = True
+                while exists:
+                    next_ext = chr(ord(next_ext)+1)
+                    new_name = name_base+next_ext
+                    if new_name not in unique_atoms_cnt:
+                        exists = False
+                        unique_atoms_cnt[new_name] = 1
                 
-                cnt = 10
-                while cnt >= 9:
-                    new_sec_char = chr(ord(sec_char)+1)
-                    new_name = new_name[0]+new_sec_char
-                    if new_sec_char in unique_atoms_cnt:
-                        cnt = unique_atoms_cnt[cnt]
-                    else:
-                        cnt = 0
-                
-                if new_name not in unique_atoms_cnt:
-                    at.name = new_name
-                    unique_atoms_cnt[new_name] = 0
-                else:    
-                    at.name = new_name + str(cnt)
-                    unique_atoms_cnt[new_name] = cnt+1
-                        
+        at.name = new_name
+    return atoms
