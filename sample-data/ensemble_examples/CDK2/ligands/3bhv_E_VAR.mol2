@@ -1,0 +1,77 @@
+# Name: VAR
+# Created by ModelServer 0.9.11
+
+# model_server_result.job_id: Q2Qw-RiEXZ6jRFNKTmLtOA
+# model_server_result.datetime_utc: 2024-07-13 21:18:17
+# model_server_result.server_version: 0.9.11
+# model_server_result.query_name: ligand
+# model_server_result.source_id: pdb-bcif
+# model_server_result.entry_id: 3bhv
+
+# model_server_params.name: atom_site
+# model_server_params.value: {"label_asym_id":"E","auth_seq_id":299}
+
+# model_server_stats.io_time_ms: 4
+# model_server_stats.parse_time_ms: 44
+# model_server_stats.create_model_time_ms: 9
+# model_server_stats.query_time_ms: 267
+# model_server_stats.encode_time_ms: 0
+# model_server_stats.element_count: 22
+
+@<TRIPOS>MOLECULE
+VAR
+22 25 1
+****
+****
+
+@<TRIPOS>ATOM
+1 O1 -6.176 18.782 -19.488 O.3 1 VAR 0.000
+2 C1 -7.386 19.187 -19.973 C.ar 1 VAR 0.000
+3 C2 -8.553 18.736 -19.378 C.ar 1 VAR 0.000
+4 C3 -9.798 19.160 -19.868 C.ar 1 VAR 0.000
+5 N1 -9.977 19.991 -20.918 N.ar 1 VAR 0.000
+6 C4 -8.896 20.488 -21.579 C.ar 1 VAR 0.000
+7 N2 -8.914 21.328 -22.632 N.ar 1 VAR 0.000
+8 C5 -9.967 21.866 -23.280 C.cat 1 VAR 0.000
+9 N3 -11.240 21.596 -22.909 N.pl3 1 VAR 0.000
+10 N4 -9.747 22.698 -24.329 N.ar 1 VAR 0.000
+11 C6 -8.497 22.989 -24.729 C.ar 1 VAR 0.000
+12 C7 -7.406 22.442 -24.057 C.ar 1 VAR 0.000
+13 C8 -7.639 21.587 -22.988 C.ar 1 VAR 0.000
+14 C9 -6.681 20.850 -22.092 C.ar 1 VAR 0.000
+15 C10 -7.538 20.108 -21.130 C.ar 1 VAR 0.000
+16 C11 -5.192 20.854 -22.114 C.ar 1 VAR 0.000
+17 C14 -4.480 20.074 -21.211 C.ar 1 VAR 0.000
+18 C13 -3.090 20.099 -21.232 C.ar 1 VAR 0.000
+19 N7 -2.460 20.876 -22.126 N.ar 1 VAR 0.000
+20 C12 -3.167 21.630 -23.007 C.cat 1 VAR 0.000
+21 N5 -4.524 21.622 -22.997 N.ar 1 VAR 0.000
+22 N6 -2.510 22.415 -23.906 N.pl3 1 VAR 0.000
+@<TRIPOS>BOND
+1 1 2 1
+2 2 3 ar
+3 2 15 ar
+4 3 4 ar
+5 4 5 ar
+6 5 6 ar
+7 6 7 ar
+8 6 15 ar
+9 7 8 ar
+10 7 13 ar
+11 8 9 1
+12 8 10 ar
+13 10 11 ar
+14 11 12 ar
+15 12 13 ar
+16 13 14 ar
+17 14 15 ar
+18 14 16 ar
+19 16 17 ar
+20 16 21 ar
+21 17 18 ar
+22 18 19 ar
+23 19 20 ar
+24 20 21 ar
+25 20 22 1
+@<TRIPOS>SUBSTRUCTURE
+1 VAR 1

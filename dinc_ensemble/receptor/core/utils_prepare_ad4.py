@@ -22,8 +22,10 @@ def prepare_receptor_ad4(
         repairs: str = "checkhydrogens",
         charges_to_add: str = "gasteiger",
         preserve_charge_types: str = None,
-        cleanup: str = "nphs_lps_waters_nonstdres",
-        delete_single_nonstd_residues: bool = False,
+        # delete alternative positions, also important!!
+        cleanup: str = "nphs_lps_waters_nonstdres_deleteAltB",
+        # remove hetatms!! importand addition!
+        delete_single_nonstd_residues: bool = True,
         output_dict = None,
         unique_atom_names: bool = False
 ):
