@@ -8,7 +8,10 @@ from dinc_ensemble.parameters import *
 from dinc_ensemble import write_ligand
 from dinc_ensemble.ligand import DINCMolecule
 from pathlib import Path
-debug = True
+
+import logging
+logger = logging.getLogger('dinc_ensemble.docking.run')
+logger.setLevel(logging.DEBUG)
 
 
 def dinc_full_run(ligand_file: str,
@@ -25,6 +28,13 @@ def dinc_full_run(ligand_file: str,
     root_dir = dinc_run_info.root
     analysis_dir = dinc_run_info.analysis
     fragments_dir = dinc_run_info.ligand.parent
+
+    
+    fh = logging.FileHandler(str(Path(root_dir) / Path('dinc_ensemble_run.log')))
+    fh.setLevel(logging.DEBUG)
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    fh.setFormatter(formatter)
+    logger.addHandler(fh)
     
     # for tracking progress:
     # 0 - scheduled
@@ -61,10 +71,9 @@ def dinc_full_run(ligand_file: str,
             current_job_threads = initial_job_threads
             # for each iteration of the fragments
             for frag_idx in range(frag_cnt):
-                if debug:
-                    print("-------------------------------------")
-                    print("DINC-Ensemble: Thread for - Job #{}; Fragment{};".format(job,frag_idx))
-                    print("-------------------------------------")
+                logger.info("-------------------------------------")
+                logger.info("DINC-Ensemble: Thread for - Job #{}; Fragment{};".format(job,frag_idx))
+                logger.info("-------------------------------------")
                 # for all receptor threads (replicas)
                 for t in current_job_threads:
                     t.start()
@@ -75,11 +84,10 @@ def dinc_full_run(ligand_file: str,
                 current_job_threads = DINCDockThreadVina.next_step(current_job_threads, frag_idx)
             
             
-        if debug:
-            print("-------------------------------------")
-            print("DINC-Ensemble: Finished all threads - summarizing results")
-            print("-------------------------------------")
-        
+        logger.info("-------------------------------------")
+        logger.info("DINC-Ensemble: Finished all threads - summarizing results")
+        logger.info("-------------------------------------")
+    
         all_results = None
         for job, job_threads in dinc_frag_threads_per_job.items():
             for t in job_threads:
@@ -92,10 +100,11 @@ def dinc_full_run(ligand_file: str,
                     all_results = pd.concat([all_results, res_df])
         all_results = all_results.sort_values(by = ["energies", "rmsds"]).reset_index(drop=True)
         all_results.to_csv(dinc_run_info.analysis / Path("results.csv"))
-        if debug:
-            print("-------------------------------------")
-            print("DINC-Ensemble: Extracting best poses")
-            print("-------------------------------------")
+
+        logger.info("-------------------------------------")
+        logger.info("DINC-Ensemble: Extracting best poses")
+        logger.info("-------------------------------------")
+
         n_out = DINC_CORE_PARAMS.n_out
         out_results = all_results[all_results["fragment_id"]==frag_cnt-1][:n_out]
         for i, res in out_results.iterrows():
@@ -119,10 +128,9 @@ def dinc_full_run(ligand_file: str,
             job_name = elem.job_info.job_name
             replica = elem.data.replica
             fragment = elem.data.iterative_step
-            if debug:
-                print("-------------------------------------")
-                print("DINC-Ensemble: Thread for - Job #{}; Replica {}; Fragment{};".format(job_name, replica, fragment))
-                print("-------------------------------------")
+            logger.info("-------------------------------------")
+            logger.info("DINC-Ensemble: Thread for - Job #{}; Replica {}; Fragment{};".format(job_name, replica, fragment))
+            logger.info("-------------------------------------")
             dinc_thread = DINCDockThreadVina(elem, VINA_ENGINE_PARAMS)
             dinc_job_threads.append(dinc_thread)
             dinc_thread.start()
@@ -131,10 +139,9 @@ def dinc_full_run(ligand_file: str,
         for t in dinc_job_threads:
             t.join()
 
-        if debug:
-            print("-------------------------------------")
-            print("DINC-Ensemble: Finished all threads - summarizing results")
-            print("-------------------------------------")
+        logger.info("-------------------------------------")
+        logger.info("DINC-Ensemble: Finished all threads - summarizing results")
+        logger.info("-------------------------------------")
         
         # analyze jobs
         all_results = pd.DataFrame({"energies": [],
@@ -155,10 +162,10 @@ def dinc_full_run(ligand_file: str,
         all_results = all_results.sort_values(by = ["energies", "rmsds"]).reset_index(drop=True)
         all_results.to_csv(dinc_run_info.analysis / Path("results.csv"))
         
-        if debug:
-            print("-------------------------------------")
-            print("DINC-Ensemble: Extracting best poses")
-            print("-------------------------------------")
+        logger.info("-------------------------------------")
+        logger.info("DINC-Ensemble: Extracting best poses")
+        logger.info("-------------------------------------")
+
         n_out = DINC_CORE_PARAMS.n_out
         out_results = all_results[:n_out]
         for i, res in out_results.iterrows():
@@ -169,9 +176,7 @@ def dinc_full_run(ligand_file: str,
             ligand = DINCMolecule(conf.mol)
             write_ligand(ligand, str(dinc_run_info.analysis / Path("result_top{}.pdb".format(i))))
 
-    
-    if debug:
-        print("-------------------------------------")
-        print("DINC-Ensemble: Finished running DINC-Ensemble!")
-        print("DINC-Ensemble: See the results here: {}".format(dinc_run_info.analysis))
-        print("-------------------------------------")
+    logger.info("-------------------------------------")
+    logger.info("DINC-Ensemble: Finished running DINC-Ensemble!")
+    logger.info("DINC-Ensemble: See the results here: {}".format(dinc_run_info.analysis))
+    logger.info("-------------------------------------")

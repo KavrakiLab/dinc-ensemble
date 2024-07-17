@@ -5,7 +5,10 @@ from abc import ABCMeta, abstractmethod
 
 from ..dinc_job_elem import DINCThreadElem
 
-debug = 1
+import logging
+logger = logging.getLogger('dinc_ensemble.docking.run')
+logger.setLevel(logging.DEBUG)
+
 ##
 # The DockingThread class allows running multiple docking jobs in parallel using multi-threading.
 #   fragment: name of the fragment to be docked, in the format <ligand_name>_frag_<X>_conf_<Y>
@@ -35,12 +38,12 @@ class DINCDockThread(Thread,
         self.replica = thread_elem.data.replica
 
         # TODO: unique counter for threads?
-        if debug: 
-            print("-------------------------------------")
-            print("DINCEnsemble thread init for: ".format(self.frag_index))
-            print("Fragment: "+ self.fragment_name)
-            print("Receptor: "+ path.basename(self.receptor_name))
-            print("Replica: {}".format(self.replica))
+
+        logger.info("-------------------------------------")
+        logger.info("DINCEnsemble thread init for: ".format(self.frag_index))
+        logger.info("Fragment: "+ self.fragment_name)
+        logger.info("Receptor: "+ path.basename(self.receptor_name))
+        logger.info("Replica: {}".format(self.replica))
         
         Thread.__init__(self)
 

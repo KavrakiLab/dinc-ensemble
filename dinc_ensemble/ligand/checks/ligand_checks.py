@@ -10,6 +10,9 @@ from enum import Enum
 from ligand_checks_types_and_conditions import LigandCheckType
 from typing import Optional 
 import numpy as np
+
+import logging
+logger = logging.getLogger('dinc_ensemble.ligand')
     
 class AbstractMoleculeCheck(ABC):
 
@@ -67,13 +70,13 @@ class CheckHeavyAtoms(BaseConditionCheck):
     @property
     def max_heavy_atoms(self):
         if self.__max_heavy_atoms <= 0:
-            print("Warning: maximum heavy atoms allowed set to <= 0 !")
+            logger.info("Warning: maximum heavy atoms allowed set to <= 0 !")
         return self.__max_heavy_atoms
         
     def specific_check(self, molecule: DINCMolecule):
         # check the ligand's size
         if molecule.n_heavy_atoms > self.__max_heavy_atoms:
-            print("DincError: Unfortunately, DINC cannot process such a large ligand.")
+            logger.info("DincError: Unfortunately, DINC cannot process such a large ligand.")
             raise IOError("DINC can't process ligands larger than 1000 heavy atoms. ")
 
 

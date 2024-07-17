@@ -119,7 +119,6 @@ class Atom:
      def to_df(cls, atoms: List) -> pd.DataFrame:
 
           atoms_dict = [atom.__dict__ for atom in atoms]
-          #print(atoms_dict)
           atoms_df = pd.DataFrame(atoms_dict)
           atoms_df['charge'] = atoms_df['charge'].apply(lambda x: x.charges[x.selected_charge])
           # make sure that the atom names are unique

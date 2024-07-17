@@ -4,6 +4,7 @@ from enum import EnumType
 from typing import List
 from os import path
 from pathlib import Path
+import json
 
 from dinc_ensemble.parameters.analysis import *
 from dinc_ensemble.parameters.fragment import *
@@ -22,8 +23,14 @@ from dinc_ensemble import dinc_full_run
 from dinc_ensemble.ligand import DINCFragment
 from typing_extensions import Annotated
 
+import logging
+logger = logging.getLogger('dinc_ensemble.ligand')
 
-app = typer.Typer(add_completion=False)
+
+from .utils import init_all_dince_params
+
+
+app = typer.Typer(pretty_exceptions_show_locals=False)
 
 analyze_docstrings = DincAnalysisParams.__doc_arg__ if DincAnalysisParams.__doc_arg__ is not None else {}
 @app.command(name="analyze")
@@ -45,8 +52,8 @@ def analyze(
     DINC_ANALYSIS_PARAMS.n_out = n_out
     DINC_ANALYSIS_PARAMS.plot_score_vs_rmsd = plot_score_vs_rmsd
     DINC_ANALYSIS_PARAMS.dinc_rmsd = dinc_rmsd
-    print("Hello world")
-    print("These are the parameters: {}".format(DINC_ANALYSIS_PARAMS))
+    logger.info("Hello world")
+    logger.info("These are the parameters: {}".format(DINC_ANALYSIS_PARAMS))
     # TODO:implement this step
     
 
@@ -91,9 +98,9 @@ def fragment(
     DINC_FRAG_PARAMS.root_type = root_type
     DINC_FRAG_PARAMS.root_auto = root_auto
     DINC_FRAG_PARAMS.root_name = root_name
-    print("DINC-Ensemble Fragment")
-    print("These are the parameters: {}".format(DINC_FRAG_PARAMS))
-    print("Loading DINC-Ensemble ligand")
+    logger.info("DINC-Ensemble Fragment")
+    logger.info("These are the parameters: {}".format(DINC_FRAG_PARAMS))
+    logger.info("Loading DINC-Ensemble ligand")
     lig = load_ligand(str(ligand))
     frag = DINCFragment(lig, 
                         DincFragParams(
@@ -136,6 +143,14 @@ def dock(
     receptor_files: Annotated[List[Path], typer.Argument(help="Input receptor paths.")], 
     
     output_dir: Annotated[Path, typer.Argument(help="Output directory for DINC-Ensemble run.")],
+    
+    parameters_json: Path = typer.Option(
+        default=None,
+        help="All parameters provided in a json format (default is None). \n \
+            If provided it will be used to initialize DINC-Ensemble paramterers. \n \
+            It overrides other parameters provided in CLI command. "
+    ),
+
     job_type: DINC_JOB_TYPE = typer.Option(
         default=DEFAULT_DINC_JOB_TYPE,
         help=core_docstrings["job_type"]
@@ -232,36 +247,53 @@ def dock(
         )
     ):
 
-    DINC_CORE_PARAMS.job_type = job_type
-    DINC_CORE_PARAMS.dock_type = dock_type
-    DINC_CORE_PARAMS.dock_engine = dock_engine
-    DINC_CORE_PARAMS.replica_num = replica_num
-    DINC_CORE_PARAMS.output_dir = str(output_dir)
-    DINC_CORE_PARAMS.n_out = n_out
+    input_params = {
+        "output_dir" :output_dir,
+        "job_type" :job_type,
+        "dock_type" :dock_type,
+        "dock_engine" :dock_engine,
+        "replica_num" :replica_num,
+        "n_out" :n_out,
+        "bbox_center_type" :bbox_center_type,
+        "bbox_center_x" :bbox_center_x,
+        "bbox_center_y" :bbox_center_y,
+        "bbox_center_z" :bbox_center_z,
+        "bbox_dim_type" :bbox_dim_type,
+        "bbox_dim_x" :bbox_dim_x,
+        "bbox_dim_y" :bbox_dim_y,
+        "bbox_dim_z" :bbox_dim_z,
+        "align_receptors" :align_receptors,
+        "ref_receptor" :ref_receptor,
+        "score_f" :score_f,
+        "exhaustive" :exhaustive,
+        "n_poses" :n_poses,
+        "cpu_count" :cpu_count,
+        "seed" :seed,
+        "min_rmsd" :min_rmsd,
+        "max_evals" :max_evals,
+        "rand_steps" :rand_steps
+    }
 
-    
-    DINC_RECEPTOR_PARAMS.bbox_center_type = bbox_center_type
-    DINC_RECEPTOR_PARAMS.bbox_center_x = bbox_center_x
-    DINC_RECEPTOR_PARAMS.bbox_center_y = bbox_center_y
-    DINC_RECEPTOR_PARAMS.bbox_center_z = bbox_center_z
-    DINC_RECEPTOR_PARAMS.bbox_dim_type = bbox_dim_type
-    DINC_RECEPTOR_PARAMS.bbox_dim_x = bbox_dim_x
-    DINC_RECEPTOR_PARAMS.bbox_dim_y = bbox_dim_y
-    DINC_RECEPTOR_PARAMS.bbox_dim_z = bbox_dim_z
-    DINC_RECEPTOR_PARAMS.align_receptors = align_receptors
-    DINC_RECEPTOR_PARAMS.ref_receptor = ref_receptor
-    
-    VINA_ENGINE_PARAMS.score_f = score_f
-    VINA_ENGINE_PARAMS.exhaustive = exhaustive
-    VINA_ENGINE_PARAMS.n_poses = n_poses
-    VINA_ENGINE_PARAMS.cpu_count = cpu_count
-    VINA_ENGINE_PARAMS.seed = seed
-    VINA_ENGINE_PARAMS.min_rmsd = min_rmsd
-    VINA_ENGINE_PARAMS.max_evals = max_evals
-    VINA_ENGINE_PARAMS.rand_steps = rand_steps
+    init_all_dince_params(**input_params)
+
+    if parameters_json:
+        if parameters_json.suffix != ".json":
+            logger.error("DINC-Ensemble: parameters option must be a json file.")
+            exit()
+        else:
+            with open(parameters_json, "r") as fp:
+                parameters_kwars = json.load(fp)
+                if "align_receptors" in parameters_kwars:
+                    if parameters_kwars["align_receptors"].lower() in ['true', '1', 't', 'y', 'yes']:
+                        parameters_kwars["align_receptors"] = True
+                    else:
+                        parameters_kwars["align_receptors"] = False
+                    
+                init_all_dince_params(**parameters_kwars)
+
 
     dinc_full_run(str(ligand_file),[ str(r) for r in receptor_files])
-    print("Thank you for using DINC-Ensemble!")
+    logger.info("Thank you for using DINC-Ensemble!")
 
 if __name__ == "__main__":
     app()

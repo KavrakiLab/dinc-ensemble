@@ -16,7 +16,6 @@ def align_receptors_pymol(receptor_ref: Path,
         if rec != receptor_ref:
             pymol.cmd.super(current_receptor, 'receptor_ref')
     # save in the output_dir
-    print(output_dir)
     new_receptors = []
     for i, rec in enumerate(all_receptors):
         current_receptor = "receptor_{}".format(i)

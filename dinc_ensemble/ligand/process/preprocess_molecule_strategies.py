@@ -8,6 +8,10 @@ from AutoDockTools.atomTypeTools import (
 
 from .preprocess_molecule_abstract_strategy import PreprocessMoleculeStrategy
 from dinc_ensemble.ligand.core import DINCMolecule
+
+import logging
+logger = logging.getLogger('dinc_ensemble.ligand')
+
 class AddHydrogens(PreprocessMoleculeStrategy):
 
     strategy_name = "add_hydrogens"
@@ -27,7 +31,7 @@ class AddHydrogens(PreprocessMoleculeStrategy):
 
         try:
             hydrogens_N = HydrogenBuilder().addHydrogens(ligand.molkit_molecule)
-            print("Added {} hydrogens to the ligand.".format(hydrogens_N))
+            logger.info("Added {} hydrogens to the ligand.".format(hydrogens_N))
         except Exception as e:
             raise RuntimeError("DINC failed to add hydrogens to the molecule.") from e
         return ligand
@@ -58,7 +62,7 @@ class MergeLonePairs(PreprocessMoleculeStrategy):
                     lp_N = return_lp
             else:
                 raise RuntimeError("Error running the lone pair merger")
-            print("Merged {} lone pairs of the ligand.".format(lp_N))
+            logger.info("Merged {} lone pairs of the ligand.".format(lp_N))
         except Exception as e:
             raise RuntimeError("DINC failed to merge lone pairs of the molecule.") from e
         
@@ -82,8 +86,8 @@ class AddGasteigerCharges(PreprocessMoleculeStrategy):
 
         try:
             charges_result = GasteigerChargeCalculator().addCharges(ligand.molkit_molecule.allAtoms)
-            print("Added {} charges to the ligand atoms.".format(len(charges_result)))
-            print("Charges: {}".format(charges_result))
+            logger.info("Added {} charges to the ligand atoms.".format(len(charges_result)))
+            logger.info("Charges: {}".format(charges_result))
         except Exception as e:
             raise RuntimeError("DINC failed to add Gasteiger charges to the molecule.") from e
         return ligand
@@ -107,7 +111,7 @@ class MergeNonpolarHydrogens(PreprocessMoleculeStrategy):
 
         try:
             nonpolar_h_N = NonpolarHydrogenMerger().mergeNPHS(ligand.molkit_molecule.allAtoms)
-            print("Merged {} nonpolar hydrogens of the ligand.".format(nonpolar_h_N))
+            logger.info("Merged {} nonpolar hydrogens of the ligand.".format(nonpolar_h_N))
         except Exception as e:
             raise RuntimeError("DINC failed to add Gasteiger charges to the molecule.") from e
         return ligand

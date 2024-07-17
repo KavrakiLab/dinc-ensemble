@@ -35,7 +35,10 @@ from MolKit.molecule import Molecule as MolKitMolecule
 from AutoDockTools.MoleculePreparation import AD4LigandPreparation
 
 from typing import Optional
-verbose = False
+
+import logging
+logger = logging.getLogger('dinc_ensemble.ligand')
+
 
 def prepare_ligand4(
         mol:                        MolKitMolecule,
@@ -75,8 +78,7 @@ def prepare_ligand4(
     if assign_unique_names:  
         assign_new_names(mol.allAtoms)
                 
-        if verbose:
-            print("renamed %d atoms: each newname is the original name of the atom plus its (1-based) uniqIndex" %(len(mol.allAtoms)))
+        logger.info("renamed %d atoms: each newname is the original name of the atom plus its (1-based) uniqIndex" %(len(mol.allAtoms)))
     
     # step 3 - assign bonds by distance (if some bonds are missing?)
     if build_bonds_by_dist:
@@ -98,11 +100,11 @@ def prepare_ligand4(
                 for a in ats:
                     if a.chargeSet is not None:
                         preserved[a] = [a.chargeSet, a.charge]
-            if verbose:
-                print(" preserved = ", end=' ') 
-                for key, val in list(preserved.items()):
-                    print("key=", key)
-                    print("val =", val)
+
+            logger.info(" preserved = ", end=' ') 
+            for key, val in list(preserved.items()):
+                logger.info("key=", key)
+                logger.info("val =", val)
     
     # step 5 - prepare with AD4LigandPreparation
     # 1. optional - attach nonbonded fragments
@@ -123,11 +125,11 @@ def prepare_ligand4(
     # 3. add charge error tolerance (needed for AD4 force field)
     # 4. write in the autudock way
 
-    if verbose:
-        print("setting up LPO with mode=", mode, end=' ')
-        print("and outputfilename= ", outputfilename)
-        print("and check_for_fragments=", check_for_fragments)
-        print("and bonds_to_inactivate=", bonds_to_inactivate)
+
+    logger.info("setting up LPO with mode=", mode, end=' ')
+    logger.info("and outputfilename= ", outputfilename)
+    logger.info("and check_for_fragments=", check_for_fragments)
+    logger.info("and bonds_to_inactivate=", bonds_to_inactivate)
 
     LPO = AD4LigandPreparation(mol, mode, repairs, charges_to_add, 
                             cleanup, allowed_bonds, root, 
@@ -136,7 +138,7 @@ def prepare_ligand4(
                             bonds_to_inactivate=bonds_to_inactivate, 
                             inactivate_all_torsions=inactivate_all_torsions,
                             attach_nonbonded_fragments=attach_nonbonded_fragments,
-                            attach_singletons=attach_singletons, inmem=True)
+                            attach_singletons=attach_singletons, inmem=True, debug=False)
     
     # step 6 - restore charges ig AD4Prep changed them
     if charges_to_add is not None:
@@ -144,20 +146,20 @@ def prepare_ligand4(
         for atom, chargeList in list(preserved.items()):
             atom._charges[chargeList[0]] = chargeList[1]
             atom.chargeSet = chargeList[0]
-            if verbose: print("set charge on ", atom.full_name(), " to ", atom.charge)
+            logger.info("set charge on ", atom.full_name(), " to ", atom.charge)
     
     # step 6 - return codes and exits
-    if verbose: print("returning ", mol.returnCode) 
+    logger.info("returning ", mol.returnCode) 
     bad_list = []
     for a in mol.allAtoms:
         if a in list(coord_dict.keys()) and a.coords!=coord_dict[a]: 
             bad_list.append(a)
     if len(bad_list):
-        if verbose: print(len(bad_list), ' atom coordinates changed!')    
+        logger.info(len(bad_list), ' atom coordinates changed!')    
         for a in bad_list:
-            if verbose: print(a.name, ":", coord_dict[a], ' -> ', a.coords)
+            logger.info(a.name, ":", coord_dict[a], ' -> ', a.coords)
     else:
-        if verbose: print("No change in atomic coordinates")
+        logger.info("No change in atomic coordinates")
 
     # step 7 - reassign unique names if needed [in case of hydrogens]
     if assign_unique_names:  # added to simplify setting up covalent dockings 8/2014
@@ -178,7 +180,7 @@ def has_special_characters(s, pat=re.compile('[@_!#$%^&*()<>?/\|}{~:]')):
 def assign_new_names(atoms):
     
     unique_atoms_cnt = {}
-    if verbose: print("ASSIGNING NEW NAMES")
+    logger.info("ASSIGNING NEW NAMES")
     for i, at in enumerate(atoms):
         
         #if has_special_characters(at.name):

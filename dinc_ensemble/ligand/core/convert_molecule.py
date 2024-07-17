@@ -15,6 +15,10 @@ from IPython.display import SVG
 import pandas as pd
 from copy import deepcopy
 
+
+import logging
+logger = logging.getLogger('dinc_ensemble.ligand')
+
 AD4_ATOM_TYPES_MAP = {
     "A"     : "C",
     "HD"    : "H",
@@ -85,7 +89,7 @@ def molkit_to_rdkit(molkit_mol: MolKitMolecule) -> tuple[RDKitMol,
         Chem.SanitizeMol(rdkit_mol)
     except Chem.AtomValenceException:
         # here you may handle the error condition, or just ignore it
-        print("DINC Warning: Rdkit atom valence error!")
+        logger.info("DINC Warning: Rdkit atom valence error!")
 
     rdkit_bonds = {frozenset([b.GetBeginAtom().GetPDBResidueInfo().GetName().split()[0], 
         b.GetEndAtom().GetPDBResidueInfo().GetName().split()[0]]): b 
@@ -102,16 +106,16 @@ def molkit_to_rdkit(molkit_mol: MolKitMolecule) -> tuple[RDKitMol,
             elif hasattr(molkit_bond, "bondOrder"):
                 rdkit_bond.SetBondType(AD4_BOND_TYPES_MAP[str(molkit_bond.bondOrder)])
         else:
-            print("DINC Warning: Molkit molecule and RDKit molecule are inconsistent!")
+            logger.info("DINC Warning: Molkit molecule and RDKit molecule are inconsistent!")
     
     ## after setting these bonds sanitize?
     try:
         Chem.SanitizeMol(rdkit_mol)
     except Chem.AtomValenceException:
         # here you may handle the error condition, or just ignore it
-        print("DINC Warning: Rdkit atom valence error!")
+        logger.info("DINC Warning: Rdkit atom valence error!")
     except Chem.KekulizeException:
-        print("DINC Warning: Rdkit kekulize exception!")
+        logger.info("DINC Warning: Rdkit kekulize exception!")
 
     # map atoms to one another
     rdkit_atoms = {a.GetPDBResidueInfo().GetName().split()[0]: a
@@ -188,7 +192,7 @@ def molkit_to_rdkit(molkit_mol: MolKitMolecule) -> tuple[RDKitMol,
             rdkit_idx = map_elem["rdkit_idx"].iloc[0]
             a.rdkit_idx = int(rdkit_idx)
         else:
-            print("DINCEnsemble warning: not all atoms were mapped between the RDKit and MolKit molecules!")
+            logger.info("DINCEnsemble warning: not all atoms were mapped between the RDKit and MolKit molecules!")
     for b in molkit_mol.allAtoms.bonds[0]:
         map_elem = bond_map[
             bond_map["molkit_bonds"].apply(
@@ -199,7 +203,7 @@ def molkit_to_rdkit(molkit_mol: MolKitMolecule) -> tuple[RDKitMol,
             rdkit_idx = map_elem["rdkit_idx"].iloc[0]
             b.rdkit_idx = int(rdkit_idx)
         else:
-            print("DINCEnsemble warning: not all bonds were mapped between the RDKit and MolKit molecules!")
+            logger.info("DINCEnsemble warning: not all bonds were mapped between the RDKit and MolKit molecules!")
         
     return rdkit_mol, atom_map, bond_map
 

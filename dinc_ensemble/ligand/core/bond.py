@@ -7,6 +7,10 @@ import numpy as np
 from typing import Optional, ClassVar, Callable, List
 import pandas as pd
 
+
+import logging
+logger = logging.getLogger('dinc_ensemble.ligand')
+
 @dataclass
 class Bond:
 
@@ -60,7 +64,7 @@ class Bond:
     @property
     def incycle(self) -> bool:
         if self.bond_properties_initialized is False:
-            print("Warning: accessing a bond property that was not initialized")
+            logger.info("Warning: accessing a bond property that was not initialized")
         if hasattr(self._molkit_bond, "incycle"):
             self.incycle_ = self._molkit_bond.incycle
             return self.incycle_
@@ -69,7 +73,7 @@ class Bond:
     @property
     def hrotator(self) -> bool:
         if self.bond_properties_initialized is False:
-            print("Warning: accessing a bond property that was not initialized")
+            logger.info("Warning: accessing a bond property that was not initialized")
         if hasattr(self._molkit_bond, "hrotator"):
             self.hrotator = self._molkit_bond.hrotator
             return self.hrotator_
@@ -78,7 +82,7 @@ class Bond:
     @property
     def amdbond(self) -> bool:
         if self.bond_properties_initialized is False:
-            print("Warning: accessing a bond property that was not initialized")
+            logger.info("Warning: accessing a bond property that was not initialized")
         if hasattr(self._molkit_bond, "amdbond"):
             self.amdbond_ = self._molkit_bond.amdbond
             return self.amdbond_
@@ -87,7 +91,7 @@ class Bond:
     @property
     def possibleTors(self) -> bool:
         if self.bond_properties_initialized is False:
-            print("Warning: accessing a bond property that was not initialized")
+            logger.info("Warning: accessing a bond property that was not initialized")
         if hasattr(self._molkit_bond, "possibleTors"):
             self.possibleTors_ = self._molkit_bond.possibleTors
             return self.possibleTors_
@@ -96,7 +100,7 @@ class Bond:
     @property
     def activeTors(self) -> bool:
         if self.bond_properties_initialized is False:
-            print("Warning: accessing a bond property that was not initialized")
+            logger.info("Warning: accessing a bond property that was not initialized")
         if hasattr(self._molkit_bond, "activeTors"):
             self.activeTors_ = self._molkit_bond.activeTors
             return self.activeTors_

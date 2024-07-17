@@ -4,6 +4,9 @@ from os import path
 from abc import ABC, abstractmethod
 from dinc_ensemble.ligand.core import DINCMolecule
 
+import logging
+logger = logging.getLogger('dinc_ensemble.ligand')
+
 class LigandWriter(ABC):
     """
     Abstract base class for writing ligands to different types of output files.
@@ -79,7 +82,7 @@ class LigandWriter(ABC):
             with open(filename, 'w+') as file:
                 file.write("")
         except (FileNotFoundError, PermissionError, OSError) as e:
-            print("Error opening file {}".format(filename))
+            logger.error("Error opening file {}".format(filename))
             raise e
         
         # 3 - write using the specific extension-based writer

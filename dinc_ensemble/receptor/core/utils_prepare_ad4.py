@@ -14,7 +14,10 @@ import MolKit.molecule
 import MolKit.protein
 from AutoDockTools.MoleculePreparation import AD4ReceptorPreparation
 
-debug = False
+
+import logging
+logger = logging.getLogger('dinc_ensemble.receptor')
+
 
 def prepare_receptor_ad4(
         receptor: DINCReceptor,
@@ -88,23 +91,22 @@ def prepare_receptor_ad4(
         for at in mol.allAtoms:
             if mol.allAtoms.get(at.name) >1:
                 at.name = at.name + str(at._uniqIndex +1)
-        if verbose:
-            print("renamed %d atoms: each newname is the original name of the atom plus its (1-based) uniqIndex" %(len(mol.allAtoms)))        
+        logger.info("renamed %d atoms: each newname is the original name of the atom plus its (1-based) uniqIndex" %(len(mol.allAtoms)))        
     preserved = {}
     has_autodock_element = False
     if charges_to_add is not None and preserve_charge_types is not None:
 
         if preserve_charge_types is not None and has_autodock_element==False:
-            if debug: print('prepare_receptor4: input format does not have autodock_element SO unable to preserve charges on ' + preserve_charge_types)
-            if debug: print('exiting...')
+            logger.info('prepare_receptor4: input format does not have autodock_element SO unable to preserve charges on ' + preserve_charge_types)
+            logger.info('exiting...')
             return
         preserved_types = preserve_charge_types.split(',') 
-        if verbose: print("preserved_types=", preserved_types)
+        logger.info("preserved_types=", preserved_types)
         for t in preserved_types:
-            if verbose: print('preserving charges on type->', t)
+            logger.info('preserving charges on type->', t)
             if not len(t): continue
             ats = mol.allAtoms.get(lambda x: x.autodock_element==t)
-            if verbose: print("preserving charges on ", ats.name)
+            logger.info("preserving charges on ", ats.name)
             for a in ats:
                 if a.chargeSet is not None:
                     preserved[a] = [a.chargeSet, a.charge]
@@ -113,23 +115,23 @@ def prepare_receptor_ad4(
     alt_loc_ats = mol.allAtoms.get(lambda x: "@" in x.name)
     len_alt_loc_ats = len(alt_loc_ats)
     if len_alt_loc_ats:
-        print("WARNING!", mol.name, "has",len_alt_loc_ats, ' alternate location atoms!\nUse prepare_pdb_split_alt_confs.py to create pdb files containing a single conformation.\n')
+        logger.warning("WARNING!", mol.name, "has",len_alt_loc_ats, ' alternate location atoms!\nUse prepare_pdb_split_alt_confs.py to create pdb files containing a single conformation.\n')
 
     mode = "automatic"
     outputfilename =""
     inmem = True
-    if debug:
-        print("setting up RPO with mode=", mode, end=' ')
-        print("and outputfilename= ", outputfilename)
-        print("charges_to_add=", charges_to_add)
-        print("inmem=", inmem)
-        print("delete_single_nonstd_residues=", delete_single_nonstd_residues)
+
+    logger.info("setting up RPO with mode=", mode, end=' ')
+    logger.info("and outputfilename= ", outputfilename)
+    logger.info("charges_to_add=", charges_to_add)
+    logger.info("inmem=", inmem)
+    logger.info("delete_single_nonstd_residues=", delete_single_nonstd_residues)
 
     RPO = AD4ReceptorPreparation(mol, mode, repairs, charges_to_add, 
                         cleanup, outputfilename=outputfilename,
                         preserved=preserved, 
                         delete_single_nonstd_residues=delete_single_nonstd_residues,
-                        dict=output_dict, inmem=True)    
+                        dict=output_dict, inmem=True, debug=False)    
 
     if charges_to_add is not None:
         #restore any previous charges

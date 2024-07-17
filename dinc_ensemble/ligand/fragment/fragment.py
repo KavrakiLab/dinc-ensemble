@@ -34,8 +34,9 @@ from .molkit_utils import create_tor_tree, \
                             dihedral
 from .draw import draw_fragment
 
-debug = False
-warning = True
+
+import logging
+logger = logging.getLogger('dinc_ensemble.ligand')
 
 class DINCFragment:
     
@@ -122,13 +123,13 @@ class DINCFragment:
         '''
         Convert info from torTree into dictionaries for rdkit and molkit reference.
         '''        
-        if debug: print("-----------------------")
-        if debug: print("DINCEnsemble: defining node of the fragment #{}".format(self._molecule.molkit_molecule.name))
-        if debug: print("-----------------------")
+        logger.info("-----------------------")
+        logger.info("DINCEnsemble: defining node of the fragment #{}".format(self._molecule.molkit_molecule.name))
+        logger.info("-----------------------")
         self.node_dict = {}
         self.molkit_atom_node_dict = {}
         self.molkit_bond_node_dict = {}
-        if debug: print("Defining root node")
+        logger.info("Defining root node")
         self.molkit_atom_node_dict, \
             self.molkit_bond_node_dict, \
             self.node_dict = self.__add_node_info_to_dict__(self.torTree.rootNode,
@@ -136,7 +137,7 @@ class DINCFragment:
                             self.molkit_bond_node_dict, 
                             self.node_dict)
         
-        if debug: print("Defining other nodes")
+        logger.info("Defining other nodes")
         for node in self.torTree.torsionMap:
             
             self.molkit_atom_node_dict, \
@@ -147,8 +148,8 @@ class DINCFragment:
                                 self.node_dict)
         self.atoms = self._molecule.atoms
         # assign node ids
-        if debug: print("~~~~~~~~~~~~~~~~~~~~~~~~~")
-        if debug: print("Adding node info to atom and bond dataframes!")
+        logger.info("~~~~~~~~~~~~~~~~~~~~~~~~~")
+        logger.info("Adding node info to atom and bond dataframes!")
         self.atoms["node"] = self.atoms.apply(lambda row:
                                 self.molkit_atom_node_dict[row.name] if row.name in self.molkit_atom_node_dict 
                                 else -1,
@@ -160,7 +161,7 @@ class DINCFragment:
                                               else -1,
                                               axis=1)
         
-        if debug: print("--------------------------")
+        logger.info("--------------------------")
 
                                                                         
     def __add_node_info_to_dict__(self, 
@@ -178,15 +179,15 @@ class DINCFragment:
         node_dict: node_dict[node_idx] = node
         Returns updated atom_dict, bond_dict, node_dict
         '''
-        if debug: print("-----------")
-        if debug: print("Extracting node info for node #{}".format(node.number))
+        logger.info("-----------")
+        logger.info("Extracting node info for node #{}".format(node.number))
         ligand_dinc_mol = self._molecule
         node_id = node.number
-        if debug: print("Adding node #{} to dict".format(node.number))
+        logger.info("Adding node #{} to dict".format(node.number))
         node_dict[node_id] = node
 
         # set atoms info
-        if debug: print("Node #{} contains {} atoms with tt_inds: {}".format( \
+        logger.info("Node #{} contains {} atoms with tt_inds: {}".format( \
             node.number,
             len(node.atomList),
             node.atomList))
@@ -195,8 +196,8 @@ class DINCFragment:
                         lambda x: x.tt_ind in node.atomList
                     )
         atom_list_name = [a.name for a in atom_list]
-        if debug: print("Adding {} atoms to the dict.".format(len(atom_list)))
-        if debug: print("Adding atoms to the dict with unique ids: {} ".format(atom_list_name))
+        logger.info("Adding {} atoms to the dict.".format(len(atom_list)))
+        logger.info("Adding atoms to the dict with unique ids: {} ".format(atom_list_name))
         for i in atom_list_name: 
             if i not in atoms_dict:
                 atoms_dict[i] = node_id
@@ -208,7 +209,7 @@ class DINCFragment:
                         lambda x: x.tt_ind in list(bond_molkit)
                      )
             if len(molkit_atoms) < 2:
-                if warning: print("DINC Warning: unable to extract bond info from torsion node")
+                logger.warning("DINC Warning: unable to extract bond info from torsion node")
                 return (atoms_dict, bonds_dict, node_dict)
             molkit_at1 = molkit_atoms[0].name
             molkit_at2 = molkit_atoms[1].name
@@ -223,19 +224,19 @@ class DINCFragment:
             if len(sele_bond) > 0:
                 sele_b = sele_bond.iloc[0]
                 bond_idx = sele_b.name
-                if debug: print("~~~~~~~~~~")
-                if debug: print("Adding {} bond to the dict.".format(sele_b.name))
+                logger.info("~~~~~~~~~~")
+                logger.info("Adding {} bond to the dict.".format(sele_b.name))
                 if bond_idx not in bonds_dict:
                     bonds_dict[bond_idx] = node_id
             else:
-                if debug: print("~~~~~~~~~~")
-                if warning: print("DINC Warning: unable to extract bond info from torsion node")
+                logger.info("~~~~~~~~~~")
+                logger.warning("DINC Warning: unable to extract bond info from torsion node")
        
         else:
-            if debug: print("~~~~~~~~~~")
-            if warning: print("DINC Warning: unable to extract bond info from torsion node")
+            logger.info("~~~~~~~~~~")
+            logger.warning("DINC Warning: unable to extract bond info from torsion node")
         
-        if debug: print("-----------")
+        logger.info("-----------")
         return (atoms_dict, bonds_dict, node_dict)
 
 
@@ -272,14 +273,14 @@ class DINCFragment:
 
         Returns: list of nodes in the maximum initial fragment
         '''
-        debug = True
+        debug = False
         frag = self
         initial_frag_size = self._frag_size
-        if debug: print("DINC: selecting initial fragment to maximize condition")
-        if debug: print("------------------------------------------------------")
+        logger.info("DINC: selecting initial fragment to maximize condition")
+        logger.info("------------------------------------------------------")
         if initial_frag_size >= len(frag.node_dict):
-            if debug: print("initial sragment is full ligand, all nodes")
-            if debug: print("------------------------------------------------------")
+            logger.info("initial sragment is full ligand, all nodes")
+            logger.info("------------------------------------------------------")
             all_nodes = deepcopy(frag.bfs_ordered_nodes)
             all_nodes.append(self.node_dict[0])
             return all_nodes
@@ -287,8 +288,8 @@ class DINCFragment:
         max_frag = []      
         for node_id, node in frag.node_dict.items():
             tmp_root_node = node
-            if debug: print("current root in consideration #{}".format(tmp_root_node.number))
-            if debug: print("with atoms {}".format(tmp_root_node.atomList))
+            logger.info("current root in consideration #{}".format(tmp_root_node.number))
+            logger.info("with atoms {}".format(tmp_root_node.atomList))
             visited = set()
             queue = collections.deque([tmp_root_node])
             visited.add(tmp_root_node)
@@ -307,30 +308,30 @@ class DINCFragment:
                         queue.append(neighbor)
             ini_frag_nodes = [v.number for v in list(visited)]
             ini_frag_atoms = atoms_df[atoms_df.node.isin(ini_frag_nodes)]
-            if debug: print("resulting initial fragment")
-            if debug: print(ini_frag_nodes)
-            if debug: print("with {} atoms".format(len(ini_frag_atoms)))
+            logger.info("resulting initial fragment")
+            logger.info(ini_frag_nodes)
+            logger.info("with {} atoms".format(len(ini_frag_atoms)))
             if len(ini_frag_nodes) > max_ini_frag_size:
-                if debug: print("updating max fragment")
+                logger.info("updating max fragment")
                 max_ini_frag_size = len(ini_frag_atoms)
                 max_frag = ini_frag_nodes
-        if debug: print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-        if debug: print("resulting max fragment")
-        if debug: print(max_frag)
-        if debug: print("with {} atoms".format(max_ini_frag_size))
-        if debug: print("------------------------------------------------------")
+        logger.info("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+        logger.info("resulting max fragment")
+        logger.info(max_frag)
+        logger.info("with {} atoms".format(max_ini_frag_size))
+        logger.info("------------------------------------------------------")
         max_frag_nodes = [frag.node_dict[i] for i in max_frag]
         return max_frag_nodes
 
     def _select_root_atom_(self) -> None:
 
         molkit_heavy_atoms = self._molecule.molkit_molecule.allAtoms.get(lambda a: a.element != "H")
-        if debug: print(molkit_heavy_atoms)
+        logger.info(molkit_heavy_atoms)
         selected_root_name = None
-        if debug: print("DINC: Selecting fragment root atom.")
-        if debug: print(self._root_type)
-        if debug: print(self._root_auto)
-        if debug: print(self._root_atom_name)
+        logger.info("DINC: Selecting fragment root atom.")
+        logger.info(self._root_type)
+        logger.info(self._root_auto)
+        logger.info(self._root_atom_name)
         if self._root_type is None:
             raise ValueError("DINC Error: Fragment root type not given!")
         elif self._root_type is DINC_ROOT_TYPE.RANDOM:
@@ -391,7 +392,7 @@ class DINCFragment:
             ValueError("DINCEnsemble: wrong root type given to fragment. Can't select root.")
 
         # confirm the root selection and re-init the torsion tree
-        if debug: print("DINC-Ensemble selected root atom: {}".format(selected_root_name))
+        logger.info("DINC-Ensemble selected root atom: {}".format(selected_root_name))
         selected_root_atom = self._get_molkit_atom_(selected_root_name)
         if selected_root_atom != self._root_atom:
             self._root_atom = selected_root_atom
@@ -414,16 +415,16 @@ class DINCFragment:
         cut_tor_size = self._frag_size
         i_frag = 0
         self.split_frags = []
-        if debug: print("---------------------")
-        if debug: print("DINCEnsemble: splitting fragments of {}".format(self._molecule.molkit_molecule.name))
-        if debug: print("---------------------")
-        if debug: print("Splitting ligand of tors size {} to fragments of size {}".format(nodes_N, cut_tor_size))
+        logger.info("---------------------")
+        logger.info("DINCEnsemble: splitting fragments of {}".format(self._molecule.molkit_molecule.name))
+        logger.info("---------------------")
+        logger.info("Splitting ligand of tors size {} to fragments of size {}".format(nodes_N, cut_tor_size))
         
         prev_mol = None
         while cut_tor_size < nodes_N:
-            if debug: print("---------------------")
-            if debug: print("Splitting fragment #{}".format(i_frag))
-            if debug: print("---------------------")
+            logger.info("---------------------")
+            logger.info("Splitting fragment #{}".format(i_frag))
+            logger.info("---------------------")
             tmp_mol = self._cut_fragment_(self._molecule,
                                 cut_tor_size, frag_id=i_frag)
             tmp_params = DincFragParams(frag_mode=DINC_FRAGMENT_MODE.MANUAL,
@@ -436,9 +437,9 @@ class DINCFragment:
             cut_tor_size += self._frag_new
         self.split_frags.append(deepcopy(self))
 
-        if debug: print("---------------------")
-        if debug: print("Split into {} fragmens".format(len(self.split_frags)))
-        if debug: print("~~~~~~~~~~~~~~~~~~~~~")
+        logger.info("---------------------")
+        logger.info("Split into {} fragmens".format(len(self.split_frags)))
+        logger.info("~~~~~~~~~~~~~~~~~~~~~")
         return self.split_frags
 
 
@@ -513,24 +514,24 @@ class DINCFragment:
         DINCMolecule that represents the cut
         '''
         #molkit_mol = deepcopy(self._molecule.molkit_molecule)
-        if debug: print("DINCEnsemble: cutting a fragment from molecule {}".format(molecule.molkit_molecule.name))
-        if debug: print("---------------------")
-        if debug: print("Frag size = {}".format(frag_size))
+        logger.info("DINCEnsemble: cutting a fragment from molecule {}".format(molecule.molkit_molecule.name))
+        logger.info("---------------------")
+        logger.info("Frag size = {}".format(frag_size))
         
         bfs_nodes = self.get_bfs_tor_tree_nodes(molecule.molkit_molecule)
         
         if frag_size >= len(bfs_nodes):
-            if debug: print("---------------------")
-            if debug: print("Fragment size larger or equal than number of nodes.\n\
+            logger.info("---------------------")
+            logger.info("Fragment size larger or equal than number of nodes.\n\
                             No need to split")
-            if debug: print("~~~~~~~~~~~~~~~~~~~~~")
+            logger.info("~~~~~~~~~~~~~~~~~~~~~")
             return self._molecule
         
         fragment_molkit = deepcopy(molecule.molkit_molecule)
 
         # delete atoms that don't fall in this fragment
         cutoff =  frag_size
-        if debug: print("Deleting atoms belonging to nodes in the bfs further than\
+        logger.info("Deleting atoms belonging to nodes in the bfs further than\
                         {} nodes".format(cutoff))
         del_atoms = [
             a
@@ -539,7 +540,7 @@ class DINCFragment:
             for a in fragment_molkit.allAtoms
             if a.tt_ind == i
         ]
-        if debug: print("Deleting {} atoms from the molecule.".format(len(del_atoms)))
+        logger.info("Deleting {} atoms from the molecule.".format(len(del_atoms)))
         self._delete_molkit_atoms_(fragment_molkit, del_atoms)
 
         # generate this as a new molkit molecule
@@ -554,7 +555,7 @@ class DINCFragment:
         # 2 - make molecule from atoms
         # 3 - reassign bond orders appropriately to match the previous bonds
         # 4 - initialize
-        if debug: print("Converting the remaining atoms into a molecule")
+        logger.info("Converting the remaining atoms into a molecule")
         new_mol_name = "tmp"
         if frag_id is not None:
             new_mol_name = molecule.molkit_molecule.name + "_frag_{}".format(frag_id)
@@ -585,7 +586,7 @@ class DINCFragment:
                     end: int = None):
         
         if self.split_frags is None:
-            print("First split the fragments before writing them!")
+            logger.info("First split the fragments before writing them!")
             return 
         p = Path(out_dir)
         frag_id = []
@@ -618,7 +619,7 @@ class DINCFragment:
                     start: int = 0,
                     end: int = None):
         if self.split_frags is None:
-            print("First split the fragments before writing them!")
+            logger.info("First split the fragments before writing them!")
             return 
         p = Path(out_dir)
         frag_id = []
@@ -645,7 +646,7 @@ class DINCFragment:
                     start: int = 0,
                     end: int = None):
         if self.split_frags is None:
-            print("First split the fragments before writing them!")
+            logger.info("First split the fragments before writing them!")
             return 
         p = Path(out_dir)
         frag_pdbqt_file = []
@@ -721,7 +722,7 @@ class DINCFragment:
 
     def _update_dihedral_angle_info(self):
         for node_id, node in self.node_dict.items():
-            if debug: print("Updating dihedral info for node {}".format(node_id))
+            logger.info("Updating dihedral info for node {}".format(node_id))
             if node_id == 0:
                 continue
             if not hasattr(node, "dihedral_atoms"):
@@ -945,7 +946,7 @@ class DINCFragment:
                                                 axis=1)
 
     def _get_molkit_atom_(self, atom_name:str) -> MolKitAtom:
-        if debug: print(atom_name)
+        logger.info(atom_name)
         atoms = self._molecule.molkit_molecule.allAtoms.get(atom_name)
         if len(atoms) > 0:
             return atoms[0]

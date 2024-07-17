@@ -26,8 +26,6 @@ from ..parameters import DINC_CORE_PARAMS, DINC_RECEPTOR_PARAMS, DINC_ANALYSIS_P
 from .utils.utils_files import prepare_run_directory, prepare_dinc_thread_elems
 from .utils.utils_prep_receptor import align_receptors, prepare_bbox
 
-debug = True
-
 def init_dinc_ensemble_threads(ligand_file: str,
                        receptor_files: List[str]):
     

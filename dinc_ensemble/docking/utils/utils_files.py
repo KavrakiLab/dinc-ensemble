@@ -12,16 +12,20 @@ from os import path
 from typing import List
 from shutil import copy as shcopy
 from copy import deepcopy
-debug = True
+import logging
+logger = logging.getLogger('dinc_ensemble.docking.run')
+logger.setLevel(logging.DEBUG)
+
 
 def prepare_run_directory(ligand_file: str, 
                            receptor_files: List[str],
                            out_dir: str) -> DINCRunInfo:
     out_dir_path = Path(out_dir)
-    if debug:
-        print("-------------------------------------")
-        print("DINC-Ensemble: Preparing the file structure for jobs")
-        print("-------------------------------------")
+    
+    logger.info("-------------------------------------")
+    logger.info("DINC-Ensemble: Preparing the file structure for jobs")
+    logger.info("-------------------------------------")
+
     out_dir_path_ensemble = out_dir_path / "ensemble"
     out_dir_path_ensemble.mkdir(exist_ok=True, parents=True)
     # copy receptors
@@ -32,20 +36,20 @@ def prepare_run_directory(ligand_file: str,
         
     # copy ligand
     out_dir_path_ligand= out_dir_path / "ligand"
-    if debug:
-        print("Copying ligand to {}".format(out_dir_path_ligand))
+
+    logger.info("Copying ligand to {}".format(out_dir_path_ligand))
     out_dir_path_ligand.mkdir(exist_ok=True, parents=True)
     lig_new_path = check_and_copy_file(ligand_file, out_dir_path_ligand)
     
 
     out_dir_path_analysis = out_dir_path / "analysis"
     out_dir_path_analysis.mkdir(exist_ok=True, parents=True)
-    if debug:
-        print("Run root directory: {}".format(out_dir_path))
-        print("Run ligand directory: {}".format(out_dir_path_ligand))
-        print("Ensemble/Receptor directory: {}".format(out_dir_path_ensemble))
-        print("Run analysis directory: {}".format(out_dir_path_analysis))
-        
+
+    logger.info("Run root directory: {}".format(out_dir_path))
+    logger.info("Run ligand directory: {}".format(out_dir_path_ligand))
+    logger.info("Ensemble/Receptor directory: {}".format(out_dir_path_ensemble))
+    logger.info("Run analysis directory: {}".format(out_dir_path_analysis))
+    
     return DINCRunInfo(out_dir_path, lig_new_path,
                         rec_new_paths, out_dir_path_ensemble, out_dir_path_analysis)
 
@@ -66,16 +70,15 @@ def prepare_dinc_thread_elems(dinc_run_info: DINCRunInfo,
                               frag_params: DincFragParams = DINC_FRAG_PARAMS
                               ) -> List[DINCThreadElem]:
     dinc_run_thr_elems: List[DINCThreadElem] = []
-    if debug:
-        print("-------------------------------------")
-        print("DINC-Ensemble: Loading thread data!")
-        print("-------------------------------------")
+
+    logger.info("-------------------------------------")
+    logger.info("DINC-Ensemble: Loading thread data!")
+    logger.info("-------------------------------------")
     
     ligand = load_ligand(str(dinc_run_info.ligand))
-    if debug:
-        print("-------------------------------------")
-        print("DINC-Ensemble: Loaded ligand")
-        print("-------------------------------------")
+    logger.info("-------------------------------------")
+    logger.info("DINC-Ensemble: Loaded ligand")
+    logger.info("-------------------------------------")
     fragment = None
     if dock_type == DINC_DOCK_TYPE.INCREMENTAL:
         fragment = DINCFragment(ligand, DINC_FRAG_PARAMS)
@@ -98,18 +101,18 @@ def prepare_dinc_thread_elems(dinc_run_info: DINCRunInfo,
         frag_info_html = frags_info_df.to_html(render_links=True,escape=False)
         with open(path.join(output_dir, info_table_fname), "w") as f:
             f.write(frag_info_html)
-        if debug:
-            print("-------------------------------------")
-            print("DINC-Ensemble: Loaded fragment")
-            print("-------------------------------------")
+
+        logger.info("-------------------------------------")
+        logger.info("DINC-Ensemble: Loaded fragment")
+        logger.info("-------------------------------------")
 
     receptors = []
     for receptor_path in dinc_run_info.receptors:
         receptor = load_receptor(str(receptor_path))
-    if debug:
-        print("-------------------------------------")
-        print("DINC-Ensemble: Loaded receptors")
-        print("-------------------------------------")
+
+    logger.info("-------------------------------------")
+    logger.info("DINC-Ensemble: Loaded receptors")
+    logger.info("-------------------------------------")
         
     for i, job in enumerate(dinc_run_jobs):
         # load thread data - one job data per replica

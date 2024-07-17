@@ -2,6 +2,7 @@ from os import path
 from pathlib import Path
 import pandas as pd
 from typing import List
+import threading
 
 from ...parameters import DINC_JOB_TYPE, DINC_RECEPTOR_PARAMS, DINC_CORE_PARAMS, SCORE_F
 from ...analysis.rmsd import calculate_rmsd 
@@ -11,7 +12,11 @@ from .dinc_thread import DINCDockThread
 from ...parameters.dock_engine_vina import VinaEngineParams
 
 from vina import Vina
-debug = True
+
+import logging
+logger = logging.getLogger('dinc_ensemble.docking.run')
+logger.setLevel(logging.DEBUG)
+
 
 class DINCDockThreadVina(DINCDockThread):
 
@@ -30,6 +35,7 @@ class DINCDockThreadVina(DINCDockThread):
         ligand_output = self.output_dir / Path(self.ligand_name+"frag_{}_rep_{}_out.pdbqt".format(self.frag_index,self.replica))
         self.results_pdbqt = ligand_output
         self.conformations = None
+        self.exception = None
         if self.results_pdbqt.exists():
             conformations = extract_vina_conformations(str(self.results_pdbqt))
             self.conformations = conformations     
@@ -41,60 +47,92 @@ class DINCDockThreadVina(DINCDockThread):
         self.prepare_and_set_scoring()
     
     def optimize(self):
-        self.vina.optimize()
+        try:
+            self.vina.optimize()
+        except Exception as e:
+            logger.error("Failed optimizing with Vina thread \n {}".format(e))
+            self.exception = e
     
     def dock(self):
-        self.vina.dock()
+        try:
+            self.vina.dock()
+        except Exception as e:
+            logger.error("Failed docking with Vina thread \n {}".format(e))
+            self.exception = e
     
     def randomize(self):
-        self.vina.randomize()
+        try:
+            self.vina.randomize()
+        except Exception as e:
+            logger.error("Failed randomizing with Vina thread \n {}".format(e))
+            self.exception = e
     
     def score(self):
-        self.vina.score()
+        try:
+            self.vina.score()
+        except Exception as e:
+            logger.error("Failed scoring with Vina thread \n {}".format(e))
+            self.exception = e
 
     def prepare_vina_object(self):
-        v = Vina(sf_name=self.params.score_f,
-                 cpu = self.params.cpu_count, 
-                 seed = self.params.seed,
-                 verbosity=2)
+        try:
+            v = Vina(sf_name=self.params.score_f,
+                    cpu = self.params.cpu_count, 
+                    seed = self.params.seed,
+                    verbosity=2)
+        except Exception as e:
+            logger.error("Failed initializing Vina thread \n {}".format(e))
+            self.exception = e
         return v
 
     def prepare_and_set_receptor(self):
-        receptor_pdbqt_str = self.receptor.pdbqt_str
-        dir_path = self.output_dir 
-        receptor_name = self.receptor_name
-        rec_pdbqt_outname = dir_path / Path(receptor_name+".pdbqt") # type: ignore
-        with open(rec_pdbqt_outname, "w") as f:
-            f.write(receptor_pdbqt_str)
-        self._receptor_pdbqt_fname = rec_pdbqt_outname
-        self.vina.set_receptor(str(rec_pdbqt_outname))
+        try:
+            receptor_pdbqt_str = self.receptor.pdbqt_str
+            dir_path = self.output_dir 
+            receptor_name = self.receptor_name
+            rec_pdbqt_outname = dir_path / Path(receptor_name+".pdbqt") # type: ignore
+            with open(rec_pdbqt_outname, "w") as f:
+                f.write(receptor_pdbqt_str)
+            self._receptor_pdbqt_fname = rec_pdbqt_outname
+            self.vina.set_receptor(str(rec_pdbqt_outname))
+        except Exception as e:
+            logger.error("Failed preparing receptor for the Vina thread \n {}".format(e))
+            self.exception = e
 
     def prepare_and_set_ligand(self):
-        # if iterative docking, set the apropriate ligand for the iteration
-        lig_molkit = self.ligand.molkit_molecule
-        if self.fragment is not None:
-            lig_molkit = self.fragment.split_frags[self.frag_index]._molecule.molkit_molecule
-        pdbqt_str = lig_molkit.pdbqt_str
-        
-        frag_pdbqt_name = "frag_{}_rep_{}.pdbqt".format(self.frag_index, self.replica)
-        
-        with open(self.output_dir / frag_pdbqt_name, "w") as f:
-            f.write(pdbqt_str)
-        self.vina.set_ligand_from_string(pdbqt_str)
+        try:
+            # if iterative docking, set the apropriate ligand for the iteration
+            lig_molkit = self.ligand.molkit_molecule
+            if self.fragment is not None:
+                lig_molkit = self.fragment.split_frags[self.frag_index]._molecule.molkit_molecule
+            pdbqt_str = lig_molkit.pdbqt_str
+            
+            frag_pdbqt_name = "frag_{}_rep_{}.pdbqt".format(self.frag_index, self.replica)
+            
+            with open(self.output_dir / frag_pdbqt_name, "w") as f:
+                f.write(pdbqt_str)
+            self.vina.set_ligand_from_string(pdbqt_str)
+        except Exception as e:
+            logger.error("Failed preparing ligand for the Vina thread \n {}".format(e))
+            self.exception = e
 
     def prepare_and_set_scoring(self):
 
-        if self.params.score_f == SCORE_F.VINA or self.score == self.params.score_f == SCORE_F.VINARDO:
-            bbox_center = [DINC_RECEPTOR_PARAMS.bbox_center_x,
-                           DINC_RECEPTOR_PARAMS.bbox_center_y,
-                           DINC_RECEPTOR_PARAMS.bbox_center_z]
-            bbox_dims = [DINC_RECEPTOR_PARAMS.bbox_dim_x,
-                        DINC_RECEPTOR_PARAMS.bbox_dim_y,
-                        DINC_RECEPTOR_PARAMS.bbox_dim_z]
-        
-            self.vina.compute_vina_maps(
-                bbox_center,
-                bbox_dims)
+        try:
+            if self.params.score_f == SCORE_F.VINA or self.score == self.params.score_f == SCORE_F.VINARDO:
+                bbox_center = [DINC_RECEPTOR_PARAMS.bbox_center_x,
+                            DINC_RECEPTOR_PARAMS.bbox_center_y,
+                            DINC_RECEPTOR_PARAMS.bbox_center_z]
+                bbox_dims = [DINC_RECEPTOR_PARAMS.bbox_dim_x,
+                            DINC_RECEPTOR_PARAMS.bbox_dim_y,
+                            DINC_RECEPTOR_PARAMS.bbox_dim_z]
+            
+                self.vina.compute_vina_maps(
+                    bbox_center,
+                    bbox_dims)
+        except Exception as e:
+            logger.error("Failed ligand maps for the Vina thread \n {}".format(e))
+            self.exception = e
         '''
         if self.score == DINC_SCORING.AD4:
             # check that the receptor ad4 maps exist
@@ -137,16 +175,15 @@ class DINCDockThreadVina(DINCDockThread):
     def run(self): 
     # if the thread had already finished just continue to next
         if self.results_pdbqt.exists():
-            if debug:
-                print("Continuing the job (found output files for thread).")
-                print("Continuing from iter step #{}".format(self.frag_index))
+
+            logger.info("Continuing the job (found output files for thread).")
+            logger.info("Continuing from iter step #{}".format(self.frag_index))
             if self.fragment is not None:
                 conformations = extract_vina_conformations(str(self.results_pdbqt))
                 self.conformations = conformations
             return
         else:
-            if debug:
-                print("Starting thread")
+            logger.info("Starting thread")
 
         # note that the job started
         #self.prepare()
@@ -206,6 +243,11 @@ class DINCDockThreadVina(DINCDockThread):
                 next_iter_threads.append(new_thread)
         return next_iter_threads
         
+
+    def join(self):
+        threading.Thread.join(self)
+        if self.exception:
+            raise self.exception
 
 
 
