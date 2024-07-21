@@ -59,9 +59,6 @@ def dinc_full_run(ligand_file: str,
             fragment = elem.data.iterative_step
             dinc_thread = DINCDockThreadVina(elem, 
                                                 VINA_ENGINE_PARAMS)
-            
-            # TODO: figure out where to place randomize
-            #dinc_thread.randomize()
             dinc_frag_threads.append(dinc_thread)
             if job_name not in dinc_frag_threads_per_job:
                 dinc_frag_threads_per_job[job_name] = []
@@ -83,7 +80,7 @@ def dinc_full_run(ligand_file: str,
                 dinc_frag_threads_per_job[job] = current_job_threads
                 current_job_threads = DINCDockThreadVina.next_step(current_job_threads, frag_idx)
             
-            
+
         logger.info("-------------------------------------")
         logger.info("DINC-Ensemble: Finished all threads - summarizing results")
         logger.info("-------------------------------------")
@@ -173,7 +170,7 @@ def dinc_full_run(ligand_file: str,
             model_id = int(res["model_id"])
             thr = dinc_job_threads[thr_id]
             conf = thr.conformations[model_id]
-            ligand = DINCMolecule(conf.mol)
+            ligand = DINCMolecule(conf.mol, prepare=False)
             write_ligand(ligand, str(dinc_run_info.analysis / Path("result_top{}.pdb".format(i))))
 
     logger.info("-------------------------------------")

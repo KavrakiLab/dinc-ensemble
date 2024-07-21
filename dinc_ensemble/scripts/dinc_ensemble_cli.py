@@ -88,7 +88,7 @@ def fragment(
     root_auto: DINC_ROOT_AUTO = typer.Option(
         default = DEFAULT_DINC_ROOT_AUTO,
         help = fragment_docstrings["root_auto"]),
-    root_name: DINC_ROOT_AUTO = typer.Option(
+    root_name: str = typer.Option(
         default = None,
         help = fragment_docstrings["root_name"])
 ):  

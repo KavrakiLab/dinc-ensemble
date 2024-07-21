@@ -436,6 +436,7 @@ class DINCFragment:
             i_frag += 1
             cut_tor_size += self._frag_new
         self.split_frags.append(deepcopy(self))
+        # adding final full fragment to the list too - fully flexible!!
 
         logger.info("---------------------")
         logger.info("Split into {} fragmens".format(len(self.split_frags)))
@@ -576,7 +577,7 @@ class DINCFragment:
         self._reconstruct_bonds_(old_molkit_mol=fragment_molkit,
                                  new_molkit_mol=frag_new)
         # gotta make sure when we initialize 
-        frag_new_mol = DINCMolecule(frag_new)
+        frag_new_mol = DINCMolecule(frag_new, prepare=False)
         return frag_new_mol
     
 
@@ -595,8 +596,11 @@ class DINCFragment:
         frag_pdbqts = []
         for i, elem in enumerate(self.split_frags[start:end]):
             elem_molkit_mol = elem._molecule.molkit_molecule
-            elem_path_svg = p / (elem_molkit_mol.name+".svg")
-            elem_path_pdbqt = p / (elem_molkit_mol.name+".pdbqt")
+            suffix = i
+            if i == len(self.split_frags)-1:
+                suffix = "full"
+            elem_path_svg = p / (elem_molkit_mol.name+"_frag_{}.svg".format(suffix))
+            elem_path_pdbqt = p / (elem_molkit_mol.name+"_frag_{}.pdbqt".format(suffix))
             
             tmp_svg = draw_fragment(elem)
             frag_svg.append(tmp_svg.data)
@@ -626,7 +630,10 @@ class DINCFragment:
         frag_svg = []
         for i, elem in enumerate(self.split_frags[start:end]):
             elem_molkit_mol = elem._molecule.molkit_molecule
-            elem_path_svg = p / (elem_molkit_mol.name+".svg")
+            suffix = i
+            if i == len(self.split_frags)-1:
+                suffix = "full"
+            elem_path_svg = p / (elem_molkit_mol.name+"_frag_{}.svg".format(suffix))
     
             tmp_svg = draw_fragment(elem)
             frag_svg.append(tmp_svg.data)
@@ -653,7 +660,10 @@ class DINCFragment:
         frag_id = []
         for i, elem in enumerate(self.split_frags[start:end]):
             elem_molkit_mol = elem._molecule.molkit_molecule
-            elem_path_pdbqt = p / (elem_molkit_mol.name+".pdbqt")
+            suffix = i
+            if i == len(self.split_frags)-1:
+                suffix = "full"
+            elem_path_pdbqt = p / (elem_molkit_mol.name+"_frag_{}.pdbqt".format(suffix))
             
             with open(elem_path_pdbqt, "w") as f:
                 f.write(elem_molkit_mol.pdbqt_str) 
@@ -916,6 +926,21 @@ class DINCFragment:
                                                 new_frag.molkit_bond_node_dict[x.name] if x.name in new_frag.molkit_bond_node_dict 
                                                 else -1,
                                                 axis=1)
+
+    def _activate_all_bonds(self):
+        allBonds = [b for b in self._molecule.molkit_molecule.allAtoms.bonds[0] if b.possibleTors]
+        for b in allBonds:
+            b.activeTors = 1
+
+        self._molecule.__reset__(self._molecule.molkit_molecule, reset_rdkit = False)
+        self.bonds = self._molecule.bonds
+        self.bonds = self._molecule.bonds
+        # asign node ids
+        self.bonds["node"] = self.bonds.apply(lambda x:
+                                                self.molkit_bond_node_dict[x.name] if x.name in self.molkit_bond_node_dict 
+                                                else -1,
+                                                axis=1)
+
 
     def _freeze_prev_bonds(self, new_frag):
         # randomly choose which bonds from the previous fragment will be inactive in the new fragment

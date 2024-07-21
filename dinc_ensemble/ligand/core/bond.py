@@ -55,11 +55,31 @@ class Bond:
         
     
     def __init_molkit_properties__(self):
-        self.incycle_ = self._molkit_bond.incycle
-        self.hrotator_ = self._molkit_bond.hrotator
-        self.amdbond_ = self._molkit_bond.amdbond
-        self.possibleTors_ = self._molkit_bond.possibleTors
-        self.activeTors_ = self._molkit_bond.activeTors
+        if hasattr(self._molkit_bond, "incycle"):
+            self.incycle_ = self._molkit_bond.incycle
+        else:
+            self.incycle_ = False
+
+        if hasattr(self._molkit_bond, "hrotator"):
+            self.hrotator_ = self._molkit_bond.hrotator
+        else:
+            self.hrotator_ = False
+
+        if hasattr(self._molkit_bond, "amdbond"):
+            self.amdbond_ = self._molkit_bond.amdbond
+        else:
+            self.amdbond_ = False
+
+        if hasattr(self._molkit_bond, "possibleTors"):
+            self.possibleTors_ = self._molkit_bond.possibleTors
+        else:
+            self.possibleTors_ = False
+
+        
+        if hasattr(self._molkit_bond, "activeTors"):
+            self.activeTors_ = self._molkit_bond.activeTors
+        else:
+            self.activeTors_ = False
 
     @property
     def incycle(self) -> bool:

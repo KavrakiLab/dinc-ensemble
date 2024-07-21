@@ -5,6 +5,7 @@ from MolKit.molecule import AtomSet
 from numpy import array, dot, arctan2, cross, degrees
 from numpy.linalg import norm
 
+from .fragment_utils import make_tor_tree
 
 def check_tor_tree(node, parent=None) -> None:
     '''
@@ -23,8 +24,7 @@ def check_tor_tree(node, parent=None) -> None:
 def create_tor_tree(molkit_mol: MolKitMolecule,
                     root_atom: MolKitAtom) -> None:
     
-    molkit_mol.torTree = TorTree(molkit_mol.parser, 
-                                    root_atom)
+    make_tor_tree(molkit_mol, root_atom.name)
     ## try out the other constructor?
     ## no, the other constructor has some issue 
     ## where it does not connect nodes as children

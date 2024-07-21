@@ -1,5 +1,6 @@
 
 from MolKit.molecule import Molecule as MolKitMolecule
+from AutoDockTools.MoleculePreparation import AD4LigandWriter
 from rdkit.Chem.rdchem import Mol as RDKitMol
 from rdkit.Chem import AllChem
 from rdkit import Chem
@@ -65,7 +66,7 @@ class DINCMolecule():
                 
             # get atoms info in df and numpy formats
             # keep the rdkit molecule updated
-            if update_rdkit:
+            if update_rdkit and hasattr(self.molkit_molecule, "pdbqt_str"):
                 self._rdkit_molecule, self._atom_map, self._bond_map = molkit_to_rdkit(self.molkit_molecule)
 
             allAtoms_array = np.array(self.molkit_molecule.allAtoms)
@@ -95,14 +96,20 @@ class DINCMolecule():
 
     def __init__(self, 
                  molkit_molecule: MolKitMolecule,
+                 prepare: bool = True,
                  prep4_repairs: str = "bonds_hydrogens"):
         self.molkit_molecule = molkit_molecule
-        prepare_ligand4(self.molkit_molecule, 
-                        repairs=prep4_repairs)
+        if prepare:
+            prepare_ligand4(self.molkit_molecule, 
+                            repairs=prep4_repairs)
+        elif hasattr(self.molkit_molecule, "torTree"):
+            lw = AD4LigandWriter()
+            lw.write(self.molkit_molecule, "", inmem=True)
         self.__register_molkit_molecule__()     
     
     def __reset__(self, 
                   molkit_molecule: MolKitMolecule,
+                  prepare: bool = False,
                   prep4_repairs: str = "bonds_hydrogens",
                   prep4_bonds_to_inactivate: Optional[str]="",
                   reset_rdkit: bool = False):
@@ -114,10 +121,16 @@ class DINCMolecule():
                                     (defau's not to inactivate any specific bonds)
         '''
         self.molkit_molecule = molkit_molecule
-        prepare_ligand4(self.molkit_molecule,
-                        repairs=prep4_repairs,
-                        bonds_to_inactivate=prep4_bonds_to_inactivate, build_bonds_by_dist=False)
-        self.__register_molkit_molecule__(update_name=False, update_rdkit=reset_rdkit)
+        if prepare:
+            prepare_ligand4(self.molkit_molecule,
+                            repairs=prep4_repairs,
+                            bonds_to_inactivate=prep4_bonds_to_inactivate, 
+                            build_bonds_by_dist=False)
+        elif hasattr(self.molkit_molecule, "torTree"):
+            lw = AD4LigandWriter()
+            lw.write(self.molkit_molecule, "", inmem=True)
+
+        self.__register_molkit_molecule__(update_name=False)
         
     
     @property

@@ -27,7 +27,7 @@ def draw_fragment(frag: DINCFragment,
 
     # color atoms in node
     for i, row in frag.atoms.iterrows():
-        if isnan(row["rdkit_idx"]):
+        if not row["rdkit_idx"] or isnan(row["rdkit_idx"]):
             continue
         a_id = int(row["rdkit_idx"])
         node_id = int(row["node"])

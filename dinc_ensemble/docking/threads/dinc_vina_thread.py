@@ -189,7 +189,12 @@ class DINCDockThreadVina(DINCDockThread):
         #self.prepare()
         self.score()
         self.optimize()
-        self.dock()
+        if self.frag_index == 0:
+            logger.info("Randomize and dock")
+            self.randomize_and_dock()
+        else:
+            logger.info("Dock")
+            self.dock()
         self.write_results_load_conf()
         self.analyze_results()
         # note that the job ended
