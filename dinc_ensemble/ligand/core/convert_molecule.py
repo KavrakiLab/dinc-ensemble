@@ -84,7 +84,9 @@ def molkit_to_rdkit(molkit_mol: MolKitMolecule) -> tuple[RDKitMol,
     rdkit_mol = AllChem.rdmolfiles.MolFromPDBBlock(pdbqt_str_clean, 
                                                     removeHs=False,
                                                     sanitize=False)
-    
+    if rdkit_mol is None:
+        logger.info("DINC Warning: Unable to convert the DINCMolecule to Rdkit!")
+        return (None, None, None)
     try:
         Chem.SanitizeMol(rdkit_mol)
     except Chem.AtomValenceException:

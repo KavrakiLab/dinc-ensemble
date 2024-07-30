@@ -1,5 +1,6 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, List
+from pathlib import Path
 
 if TYPE_CHECKING:
     from .fragment import DINCFragment
@@ -9,10 +10,33 @@ from math import isnan
 from IPython.display import SVG
 from ..core.convert_molecule import to_rdkit
 
+import pymol
+
 yellow = (255/255, 255/255, 0)
 green = (153/255, 250/255, 157/255)
 blue = (100/255, 169/255, 255/255)
 red = (1, 0, 0)
+
+def create_fragment_scene(full_ligand:str, 
+						fragment_list: List[str], 
+                        out_dir: str):
+    pymol.finish_launching(['pymol', '-cq'])
+    pymol.cmd.delete("all")
+    pymol.cmd.load(full_ligand, 'full_ligand')
+    pymol.cmd.color("purple", "all and element C")
+    pymol.cmd.set("stick_transparency", 0.6, "full_ligand")
+    for i, frag in enumerate(fragment_list):
+        pymol.cmd.load(frag, 'fragment', state=i+1)
+    pymol.cmd.show("sticks", "all")
+    pymol.cmd.color("pink", "fragment and element C")
+    output_scene = Path(out_dir) / "fragments.pse"
+    pymol.cmd.zoom("all")
+    pymol.cmd.save(output_scene)
+    pymol.cmd.delete("all")
+
+        
+
+
 
 def draw_fragment(frag: DINCFragment, 
                 w: int = 400, h: int = 400) -> SVG:

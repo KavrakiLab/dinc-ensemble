@@ -101,10 +101,10 @@ def prepare_ligand4(
                     if a.chargeSet is not None:
                         preserved[a] = [a.chargeSet, a.charge]
 
-            logger.info(" preserved = ", end=' ') 
+            logger.info(" preserved = ") 
             for key, val in list(preserved.items()):
-                logger.info("key=", key)
-                logger.info("val =", val)
+                logger.info("key={}".format(key))
+                logger.info("val={}".format(val))
     
     # step 5 - prepare with AD4LigandPreparation
     # 1. optional - attach nonbonded fragments
@@ -126,10 +126,10 @@ def prepare_ligand4(
     # 4. write in the autudock way
 
 
-    logger.info("setting up LPO with mode=", mode, end=' ')
-    logger.info("and outputfilename= ", outputfilename)
-    logger.info("and check_for_fragments=", check_for_fragments)
-    logger.info("and bonds_to_inactivate=", bonds_to_inactivate)
+    logger.info("setting up LPO with mode={}".format(mode))
+    logger.info("and outputfilename={}".format(outputfilename))
+    logger.info("and check_for_fragments={}".format(check_for_fragments))
+    logger.info("and bonds_to_inactivate={}".format(bonds_to_inactivate))
 
     LPO = AD4LigandPreparation(mol, mode, repairs, charges_to_add, 
                             cleanup, allowed_bonds, root, 
@@ -146,10 +146,10 @@ def prepare_ligand4(
         for atom, chargeList in list(preserved.items()):
             atom._charges[chargeList[0]] = chargeList[1]
             atom.chargeSet = chargeList[0]
-            logger.info("set charge on ", atom.full_name(), " to ", atom.charge)
+            logger.info("set charge on "+ atom.full_name() + " to " + str(atom.charge))
     
     # step 6 - return codes and exits
-    logger.info("returning ", mol.returnCode) 
+    logger.info("returning {}".format(mol.returnCode))
     bad_list = []
     for a in mol.allAtoms:
         if a in list(coord_dict.keys()) and a.coords!=coord_dict[a]: 
@@ -181,48 +181,78 @@ def assign_new_names(atoms):
     
     unique_atoms_cnt = {}
     logger.info("ASSIGNING NEW NAMES")
+    old_names = []
+    new_names = []
     for i, at in enumerate(atoms):
-        
         #if has_special_characters(at.name):
         #    raise ValueError("Molecule has atom name with special characters: {}".format(at.name))
         name = at.name
+        old_names.append(name)
         alpha_name = ""
         numeric_name = ""
+        new_name = ""
+        #print(name)
         for c in name:
             if c.isalpha():
                 alpha_name+=c
             if c.isnumeric():
                 numeric_name+=c
+        #print(alpha_name)
+        #print(numeric_name)
         if alpha_name not in unique_atoms_cnt:
             unique_atoms_cnt[alpha_name] = 0
-            at.name = alpha_name
+            new_name = alpha_name
+            #print(alpha_name)
+            #at.name = alpha_name
         else:
             cnt = unique_atoms_cnt[alpha_name] 
             new_name = alpha_name + str(cnt)
             if len(new_name) <=3:
-                at.name = new_name
+                #print(new_name)
+                #at.name = new_name
                 unique_atoms_cnt[alpha_name] = cnt+1
             # if atom name is longer than 3 characters this can be a problem
             else:
+                #print("too long!")
+                #print(name)
+                #print(alpha_name)
+                #print(numeric_name)
                 sec_char = new_name[1]
                 # if second char is alpha we can increase it
                 # if second char is numeric - we reached cnt 99 for given name probably - switch to chars
                 if sec_char.isnumeric():
                     sec_char = chr(ord("A")-1)
-                
+
                 cnt = 10
                 while cnt >= 9:
                     new_sec_char = chr(ord(sec_char)+1)
                     new_name = new_name[0]+new_sec_char
-                    if new_sec_char in unique_atoms_cnt:
-                        cnt = unique_atoms_cnt[cnt]
+                    #print(new_sec_char)
+                    if new_name in unique_atoms_cnt:
+                        cnt = unique_atoms_cnt[new_name]
                     else:
                         cnt = 0
-                
+                    #print(cnt)
+                    sec_char = new_sec_char
+
+                #print(new_name)
                 if new_name not in unique_atoms_cnt:
-                    at.name = new_name
-                    unique_atoms_cnt[new_name] = 0
+                    #at.name = new_name
+                    cnt = 0
+                    unique_atoms_cnt[new_name] = cnt
                 else:    
-                    at.name = new_name + str(cnt)
-                    unique_atoms_cnt[new_name] = cnt+1
-                        
+                    #at.name = new_name + str(cnt)
+                    cnt = unique_atoms_cnt[new_name]
+                    unique_atoms_cnt[new_name] = cnt + 1
+                    new_name = new_name + str(cnt)
+                new_name
+        new_names.append(new_name)
+        at.name = new_name
+    
+    logger.info("OLD NAMES TO NEW NAMES MAP:")
+    [logger.info(n+"->"+new_names[i])for i, n in enumerate(old_names)]
+    # rename bonds too!
+    logger.info("Re-assigning bond names")
+    bonds = atoms.bonds[0]
+    for b in bonds: b.name = "{} == {}".format(b.atom1.full_name(), b.atom2.full_name())
+    return(old_names, new_names)

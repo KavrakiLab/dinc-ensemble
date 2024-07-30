@@ -110,7 +110,7 @@ def dinc_full_run(ligand_file: str,
             model_id = int(res["model_id"])
             thr = dinc_frag_threads_per_job[job_id][thr_id]
             conf = thr.conformations[model_id]
-            ligand = DINCMolecule(conf.mol)
+            ligand = DINCMolecule(conf.mol, prepare=False)
             write_ligand(ligand, str(dinc_run_info.analysis / Path("result_top{}.pdb".format(i))))
 
     

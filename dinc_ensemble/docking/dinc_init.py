@@ -68,8 +68,7 @@ def init_dinc_ensemble_threads(ligand_file: str,
             json.dump(asdict(DINC_RECEPTOR_PARAMS), f)
         with open(dinc_run_info.root / Path("analysis_params.json"), "w") as f:
             json.dump(asdict(DINC_ANALYSIS_PARAMS), f)
-
-        if DINC_CORE_PARAMS == DINC_DOCK_TYPE.INCREMENTAL:
+        if DINC_CORE_PARAMS.dock_type == DINC_DOCK_TYPE.INCREMENTAL:
             with open(dinc_run_info.root / Path("frag_params.json"), "w") as f:
                 json.dump(asdict(DINC_FRAG_PARAMS), f)
     return dinc_run_summary, dinc_thread_elems, dinc_run_info

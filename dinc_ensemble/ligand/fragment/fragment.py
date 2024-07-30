@@ -31,8 +31,8 @@ from ...parameters.fragment import *
 from ...parameters.core import *
 from .molkit_utils import create_tor_tree, \
                             check_tor_tree, \
-                            dihedral
-from .draw import draw_fragment
+                            dihedral, delete_molkit_atoms
+from .draw import draw_fragment, create_fragment_scene
 
 
 import logging
@@ -202,11 +202,21 @@ class DINCFragment:
             if i not in atoms_dict:
                 atoms_dict[i] = node_id
 
+        # root node has no associated bonds
+
+        if node.parent is None or (node.parent is not None and len(node.parent) == 0):
+            logger.info("Not adding bond info, cause this is a root node!")
+            logger.info("-----------")
+            return (atoms_dict, bonds_dict, node_dict)
+
         # set bond info
-        bond_molkit = node.bond
-        if bond_molkit[0] is not None and bond_molkit[1] is not None:
+        bond_molkit_tup = node.bond
+        bond_molkit = ligand_dinc_mol.molkit_molecule.allAtoms.bonds[0].get(lambda x: \
+                                                                            x.atom1.tt_ind in bond_molkit_tup and \
+                                                                            x.atom2.tt_ind in bond_molkit_tup)
+        if bond_molkit_tup[0] is not None and bond_molkit_tup[1] is not None:
             molkit_atoms = ligand_dinc_mol.molkit_molecule.allAtoms.get(
-                        lambda x: x.tt_ind in list(bond_molkit)
+                        lambda x: x.tt_ind in list(bond_molkit_tup)
                      )
             if len(molkit_atoms) < 2:
                 logger.warning("DINC Warning: unable to extract bond info from torsion node")
@@ -225,7 +235,8 @@ class DINCFragment:
                 sele_b = sele_bond.iloc[0]
                 bond_idx = sele_b.name
                 logger.info("~~~~~~~~~~")
-                logger.info("Adding {} bond to the dict.".format(sele_b.name))
+                logger.info("Adding {} bond to the dict.".format(bond_molkit.name))
+                logger.info("Between atoms {} and {}.".format(sele_b["atom1_molkit_unique_name"], sele_b["atom2_molkit_unique_name"]))
                 if bond_idx not in bonds_dict:
                     bonds_dict[bond_idx] = node_id
             else:
@@ -248,12 +259,25 @@ class DINCFragment:
         '''
         molkit_mol = self._molecule.molkit_molecule
         if self._root_atom is None:
-            root_atom = molkit_mol.ROOT
+            if hasattr(molkit_mol, "ROOT"):
+                root_atom = molkit_mol.ROOT
+            else:
+                root_atom = molkit_mol.allAtoms[0]
         else:
             root_atom = self._root_atom
 
         create_tor_tree(molkit_mol, root_atom)
         check_tor_tree(molkit_mol.torTree.rootNode, None)
+
+        # check if we maybe lost the root here?
+        root_atm = self._get_molkit_atom_(root_atom.name)
+        if root_atm is None:
+            # set a new root atom
+            ra = molkit_mol.torTree.rootNode.atomSet[0]
+            self._root_atom = ra
+            self._root_atom_name = ra.name
+
+        self._molecule.__reset__(molkit_mol, prepare=False, reset_rdkit=False)
 
         self.torTree = self._molecule.molkit_molecule.torTree
         self.__define_nodes__()
@@ -311,9 +335,9 @@ class DINCFragment:
             logger.info("resulting initial fragment")
             logger.info(ini_frag_nodes)
             logger.info("with {} atoms".format(len(ini_frag_atoms)))
-            if len(ini_frag_nodes) > max_ini_frag_size:
+            if ini_frag_atoms.shape[0] > max_ini_frag_size:
                 logger.info("updating max fragment")
-                max_ini_frag_size = len(ini_frag_atoms)
+                max_ini_frag_size = ini_frag_atoms.shape[0]
                 max_frag = ini_frag_nodes
         logger.info("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
         logger.info("resulting max fragment")
@@ -444,32 +468,6 @@ class DINCFragment:
         return self.split_frags
 
 
-    def _delete_molkit_atoms_(self, 
-                             molkit_molecule: MolKitMolecule,
-                             del_atoms: list[MolKitAtom]):
-        
-        # TODO: this can go to molkit_utils
-        # remove from the neighbor atom bond list
-        # the bonds associated with the deleted atoms
-        list(
-            map(
-                lambda a:[ #remove bond from the neighboring atoms
-                           b.neighborAtom(a).bonds.remove(b) \
-                           #for all bonds belonging to the atom being deleted
-                           for b in a.bonds 
-                           #if the bond is exists in the neighbor atom
-                           if b in b.neighborAtom(a).bonds],
-                del_atoms,
-            )
-        )
-        # remove nonbonded atoms if any remain
-        for a in molkit_molecule.allAtoms:
-            if len(a.bonds) == 0:
-                del_atoms.append(a)
-        # delete all those atoms
-        molkit_molecule.allAtoms -= AtomSet(del_atoms)
-        return molkit_molecule
-
     def _reconstruct_bonds_(self, 
                             old_molkit_mol: MolKitMolecule, 
                             new_molkit_mol: MolKitMolecule):
@@ -542,7 +540,7 @@ class DINCFragment:
             if a.tt_ind == i
         ]
         logger.info("Deleting {} atoms from the molecule.".format(len(del_atoms)))
-        self._delete_molkit_atoms_(fragment_molkit, del_atoms)
+        delete_molkit_atoms(fragment_molkit, del_atoms)
 
         # generate this as a new molkit molecule
         # TODO: freeze previously explored bonds - 
@@ -652,24 +650,30 @@ class DINCFragment:
                     out_dir: str = ".",
                     start: int = 0,
                     end: int = None):
+        logger.debug("Writing the PDBQT fragments and info to dir :{}".format(out_dir))
         if self.split_frags is None:
-            logger.info("First split the fragments before writing them!")
+            logger.warning("First split the fragments before writing them!")
             return 
         p = Path(out_dir)
+        if not p.exists():
+            p.mkdir(parents=True, exist_ok=True)
         frag_pdbqt_file = []
         frag_id = []
         for i, elem in enumerate(self.split_frags[start:end]):
             elem_molkit_mol = elem._molecule.molkit_molecule
-            suffix = i
+            suffix = ""
             if i == len(self.split_frags)-1:
-                suffix = "full"
-            elem_path_pdbqt = p / (elem_molkit_mol.name+"_frag_{}.pdbqt".format(suffix))
+                suffix = "_full"
+            elem_path_pdbqt = p / (elem_molkit_mol.name+"{}.pdbqt".format(suffix))
             
             with open(elem_path_pdbqt, "w") as f:
                 f.write(elem_molkit_mol.pdbqt_str) 
 
             frag_pdbqt_file.append(elem_path_pdbqt)
             frag_id.append(i)
+        logger.debug("Fragments found:")
+        logger.debug(frag_pdbqt_file)
+        create_fragment_scene(frag_pdbqt_file[-1], frag_pdbqt_file, out_dir)
         data_df = pd.DataFrame(
             {
                 "frag_id": frag_id,
@@ -697,8 +701,16 @@ class DINCFragment:
         '''
         molkit_mol = self._molecule.molkit_molecule
         if torsions == None:
-            torsions = [0] * molkit_mol.TORSDOF
+            torsions = [0] * len(molkit_mol.torTree.torsionMap)
         
+        # if initializing the state by coordinates 
+        # has to be a coords assignment first, because else
+        # statetocoords and conformation will ignore them
+        if coords is not None:
+            for i, a in enumerate(molkit_mol.allAtoms):
+                a.coords = coords[i]
+            molkit_mol.allAtoms.updateCoords(coords)
+
         molkit_mol.stoc = StateToCoords(
             molkit_mol, 
             [0, 0, 0], 
@@ -707,10 +719,10 @@ class DINCFragment:
                  origin, 
                  translation,
                 quat, 
-                torsions,
-                coords)
+                torsions)
         c.getCoords()
         self._conformation = c
+
         # fix cases where coords were assignes as matrices
         # molkit bug after quarternion application
         for a in self._molecule.molkit_molecule.allAtoms:
@@ -724,72 +736,12 @@ class DINCFragment:
             if type(z) is matrix:
                a.coords[2] = z[0,0]
 
+
         # also update nodes 
         # to include info on the dihedral angle atoms
         # and the dihedral andgle of each tor node
-        self._update_dihedral_angle_info()
-        self._molecule.__reset__(self._molecule.molkit_molecule, reset_rdkit=False)
-
-    def _update_dihedral_angle_info(self):
-        for node_id, node in self.node_dict.items():
-            logger.info("Updating dihedral info for node {}".format(node_id))
-            if node_id == 0:
-                continue
-            if not hasattr(node, "dihedral_atoms"):
-                a1 = node.a
-                b1 = node.b
-                if a1 == b1:
-                    parent = node.parent[0]
-                    b1_list = list(set(parent.atomSet)-set([a1]))
-                    while len(b1_list) == 0 and parent.parent is not None and len(parent.parent)>0:
-                        parent = parent.parent[0]
-                        b1_list = list(set(parent.atomSet)-set([a1]))
-                    if len(b1_list) == 0:
-                        ValueError("Unable to calculate dihedral angle!")
-                    else:
-                        b1 = b1_list[0]
-                        node.b = b1
-                possibleAtoms = list(set(node.atomSet) - set([a1, b1]))
-                nodes_order = [i for i, j in enumerate(self.bfs_ordered_nodes) if j == node][0]
-                children = collections.deque(self.bfs_ordered_nodes[nodes_order:])
-                while len(possibleAtoms) < 2 and len(children) > 0:
-                    child = children.popleft()
-                    possibleAtoms = list(set(child.atomSet) - set([a1, b1]))
-
-                if len(possibleAtoms) >= 2:
-                    a2 = possibleAtoms[0]
-                    b2 = possibleAtoms[1]
-                else:
-                    a2_posibilities = [a for b in a1.bonds 
-                            for a in 
-                            set([b.atom1, b.atom2]) - set([a1, b1])]
-                    
-                    if len(a2_posibilities) == 0:
-                        raise ValueError("Unable to calculate dihedral angle!")
-                    else:
-                        a2 = a2_posibilities[0]
-                    
-                    b2_posibilities = [a for b in b1.bonds 
-                            for a in 
-                            set([b.atom1, b.atom2]) - set([a1, b1, a2])]
-                    
-                    if len(b2_posibilities) == 0:
-                        raise ValueError("Unable to calculate dihedral angle!")
-                    else:
-                        b2 = b2_posibilities[0]
-
-                dihedral_atoms = [a2, a1, b1, b2]
-                node.dihedral_atoms = dihedral_atoms
-            else:
-                dihedral_atoms = node.dihedral_atoms
-            #get atoms associated with the given bond
-            node.dihedral_angle = dihedral(
-                                    dihedral_atoms[0].coords,
-                                    dihedral_atoms[1].coords,
-                                    dihedral_atoms[2].coords,
-                                    dihedral_atoms[3].coords
-                                    )
-
+        self._molecule.__reset__(self._molecule.molkit_molecule, prepare=False, reset_rdkit=False)
+        self._molecule.__reset__(self._molecule.molkit_molecule, prepare=False, reset_rdkit=False)
 
     def _get_reference_frame_(self):
         
@@ -816,39 +768,60 @@ class DINCFragment:
            new_frag (modified): fragment into which the given conformation should be expanded
         '''
         # calculate the translation we will apply to the new fragment so that it fits the conformation
+        if self._root_atom is None:
+            self._root_atom = self._get_molkit_atom_(self._root_atom_name)
+            if self._root_atom is None:
+                ra = self.torTree.rootNode.atomSet[0]
+                self._root_atom = ra
+                self._root_atom_name = ra.name
+
         ref_root_coord = self._root_atom.coords
-        mobile_root_coord = new_frag._root_atom.coords
+        new_root = new_frag._get_molkit_atom_(self._root_atom_name)
+
+        mobile_root_coord = new_root.coords
         translation = array(ref_root_coord) - array(mobile_root_coord)
-        for i, elem in enumerate(translation):
-            if translation[i] < self.CONF_THR:
-                translation[i] = 0
+
         # get torsion mappings
         torsions = []
-        ref_node_atoms = {}
-        for node_id, node in self.node_dict.items():
-            node_atoms = self.atoms[self.atoms.node == node_id]
-            node_atom_names = set(node_atoms.index)            
-            ref_node_atoms[frozenset(node_atom_names)] = node
-
-        for mobile_node in new_frag.torTree.torsionMap:
-            mobile_node_id = mobile_node.number
-            if mobile_node_id == 0:
-                torsions.append(0)
-                continue
-            mobile_node = new_frag.node_dict[mobile_node_id]
-            mobile_node_atoms = new_frag.atoms[new_frag.atoms.node == mobile_node_id]
-            mobile_node_atom_names = frozenset(mobile_node_atoms.index)
-            
-            if mobile_node_atom_names in ref_node_atoms:
-                ref_node = ref_node_atoms[mobile_node_atom_names]
-                tor_val = ref_node.dihedral_angle - mobile_node.dihedral_angle
-                if tor_val > self.CONF_THR:
-                    torsions.append(tor_val)
-                else:
-                    torsions.append(0)
+        # compute the differences in torsion angles between the conformation and the new fragment:
+        # find four atoms defining a torsion, at2-at0-at1-at3, where at0-at1 is a common rotatable bond;
+        # for other bonds (i.e., bonds that belong only to the new fragment), store a null difference
+        prev_frag_mol = self._molecule.molkit_molecule
+        new_frag_mol = new_frag._molecule.molkit_molecule
+        common_bonds = [(b.atom1.name, b.atom2.name) for b in prev_frag_mol.allAtoms.bonds[0] \
+                        if b.possibleTors and  b.atom1 in prev_frag_mol.allAtoms and b.atom2 in prev_frag_mol.allAtoms]
+        
+        common_bonds.extend([(a2, a1) for (a1, a2) in common_bonds])
+        torsions = []
+        for node in new_frag_mol.torTree.torsionMap:
+            at = [a for i in node.bond for a in new_frag_mol.allAtoms if a.tt_ind == i]  # at0 and at1
+            at = list(set(at))
+            atm = []
+            if (at[0].name, at[1].name) in common_bonds:
+                tmp_atom = [x for x in prev_frag_mol.allAtoms if x.name == at[0].name]
+                if len(tmp_atom) > 0:
+                    atm.append(tmp_atom[0])
+                
+                tmp_atom = [x for x in prev_frag_mol.allAtoms if x.name == at[1].name]
+                if len(tmp_atom) > 0:
+                    atm.append(tmp_atom[0])
+                # at2:
+                atm.append(next(a for b in atm[0].bonds for a in set([b.atom1, b.atom2]) - set(atm)))
+                # at3:
+                atm.append(next(a for b in atm[1].bonds for a in set([b.atom1, b.atom2]) - set(atm)))
+                
+                at = [next(x for x in new_frag_mol.allAtoms if x.name == a.name) for a in atm]
+                try:
+                    frag_tor = dihedral(at[2].coords, at[0].coords, at[1].coords, at[3].coords)
+                    conf_tor = dihedral(atm[2].coords, atm[0].coords, atm[1].coords, atm[3].coords)
+                    torsions.append(conf_tor - frag_tor)
+                except ValueError:
+                    raise
             else:
                 torsions.append(0)
-    
+
+        logger.debug("Applying translations: {}".format(translation))
+        logger.debug("Applying torsions: {}".format(torsions))
         # apply the translation and torsions to the new fragment so that it fits the conformation
         new_frag._init_conformation_(
                             translation = translation,
@@ -870,14 +843,16 @@ class DINCFragment:
         Yf = cross(Xf, array(Af[2].coords) - array(Af[0].coords))
         Yf /= norm(Yf)
         Zf = cross(Xf, Yf)
-
+        
         # rotate the new fragment so that it fits the conformation
         rotation = matrix([Xc, Yc, Zc]).T * matrix([Xf, Yf, Zf])
         origin = matrix(mobile_root_coord).T
+        new_rot_coords = []
         for a in new_frag._molecule.molkit_molecule.allAtoms:
-            a.coords = list((rotation * (matrix(a.coords).T - origin) + origin).flat)
-        # TODO: update dihedral angles and the conformation
+            new_rot_coords.append(list((rotation * (matrix(a.coords).T - origin) + origin).flat))
+        new_frag._init_conformation_(coords = new_rot_coords)
 
+        '''
         # correct mistakes committed when applying the conformation to the new fragment:
         # 1) to atoms belonging only to the new fragment, we apply a translation that correspond to the
         # correction implicitly applied to their closest 'parent' atom belonging to the previous fragment
@@ -917,8 +892,12 @@ class DINCFragment:
 
         # initialize the conformation
         new_frag._init_conformation_(coords = [a.coords for a in new_frag._molecule.molkit_molecule.allAtoms])
+
+        '''
+        
         # propagate all to the pdbqt_str for writing!
-        new_frag._molecule.__reset__(new_frag._molecule.molkit_molecule, reset_rdkit = False)
+        new_frag._molecule.__reset__(new_frag._molecule.molkit_molecule, prepare=False, reset_rdkit = False)
+        new_frag._molecule.__reset__(new_frag._molecule.molkit_molecule, prepare=False, reset_rdkit = False)
 
         new_frag.bonds = new_frag._molecule.bonds
         # asign node ids
@@ -932,7 +911,7 @@ class DINCFragment:
         for b in allBonds:
             b.activeTors = 1
 
-        self._molecule.__reset__(self._molecule.molkit_molecule, reset_rdkit = False)
+        self._molecule.__reset__(self._molecule.molkit_molecule, prepare=False, reset_rdkit = False)
         self.bonds = self._molecule.bonds
         self.bonds = self._molecule.bonds
         # asign node ids
@@ -955,13 +934,14 @@ class DINCFragment:
             previous_bonds.pop(random.randrange(len(previous_bonds)))
         for b in previous_bonds:
             bond_atoms = set([b[0].name, b[1].name])
-            next(
-                b for b in allBonds if set([b.atom1.name, b.atom2.name]) == bond_atoms
-            ).activeTors = 0
+            new_b_to_freeze = [b for b in allBonds if set([b.atom1.name, b.atom2.name]) == bond_atoms]
+            if len(new_b_to_freeze) > 0:
+                new_b_to_freeze[0].activeTors = 0
+
         new_frag._molecule.molkit_molecule.torscount = self._frag_size
         new_frag._init_conformation_(coords = [a.coords for a in new_frag._molecule.molkit_molecule.allAtoms])
         # propagate all to the pdbqt_str for writing!
-        new_frag._molecule.__reset__(new_frag._molecule.molkit_molecule, reset_rdkit = False)
+        new_frag._molecule.__reset__(new_frag._molecule.molkit_molecule, prepare=False, reset_rdkit = False)
 
         new_frag.bonds = new_frag._molecule.bonds
         # asign node ids

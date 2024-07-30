@@ -78,19 +78,22 @@ class DINCMolecule():
             
             # get bonds info in df and numpy formats
             Bond.__init_bond_properties__(self.molkit_molecule.allAtoms.bonds[0])
-            self._bonds = Bond.bondize(np.array(self.molkit_molecule.allAtoms.bonds[0]))
-            self._bonds_df = Bond.to_df(self._bonds)
+            if len(self.molkit_molecule.allAtoms.bonds[0]) > 0:
+                self._bonds = Bond.bondize(np.array(self.molkit_molecule.allAtoms.bonds[0]))
+                self._bonds_df = Bond.to_df(self._bonds)
+                # connect the bonds with atoms ids
+                full_bond_list = pd.merge(left=self._bonds_df, right=self._atoms_df.add_suffix("_atom1"), 
+                        left_on="atom1_molkit_unique_name",
+                        right_on = "molkit_unique_name", how="left")
 
-            # connect the bonds with atoms ids
-            full_bond_list = pd.merge(left=self._bonds_df, right=self._atoms_df.add_suffix("_atom1"), 
-                    left_on="atom1_molkit_unique_name",
-                    right_on = "molkit_unique_name", how="left")
-
-            full_bond_list = pd.merge(left=full_bond_list, right=self._atoms_df.add_suffix("_atom2"), 
-                    left_on="atom2_molkit_unique_name",
-                    right_on = "molkit_unique_name", how="left")
-            columns_to_keep = list(self._bonds_df.columns) + ["idx_atom1", "idx_atom2"]
-            self._bonds_df = full_bond_list[columns_to_keep]
+                full_bond_list = pd.merge(left=full_bond_list, right=self._atoms_df.add_suffix("_atom2"), 
+                        left_on="atom2_molkit_unique_name",
+                        right_on = "molkit_unique_name", how="left")
+                columns_to_keep = list(self._bonds_df.columns) + ["idx_atom1", "idx_atom2"]
+                self._bonds_df = full_bond_list[columns_to_keep]
+            else:
+                self._bonds = []
+                self._bonds_df = None
 
 
 
@@ -102,9 +105,10 @@ class DINCMolecule():
         if prepare:
             prepare_ligand4(self.molkit_molecule, 
                             repairs=prep4_repairs)
-        elif hasattr(self.molkit_molecule, "torTree"):
-            lw = AD4LigandWriter()
-            lw.write(self.molkit_molecule, "", inmem=True)
+        elif hasattr(self.molkit_molecule, "torTree") and hasattr(self.molkit_molecule, "torscount"):
+            AD4LigandWriter().write(self.molkit_molecule, "", inmem=True)
+            AD4LigandWriter().write(self.molkit_molecule, "", inmem=True)
+            
         self.__register_molkit_molecule__()     
     
     def __reset__(self, 
@@ -126,9 +130,9 @@ class DINCMolecule():
                             repairs=prep4_repairs,
                             bonds_to_inactivate=prep4_bonds_to_inactivate, 
                             build_bonds_by_dist=False)
-        elif hasattr(self.molkit_molecule, "torTree"):
-            lw = AD4LigandWriter()
-            lw.write(self.molkit_molecule, "", inmem=True)
+        elif hasattr(self.molkit_molecule, "torTree") and hasattr(self.molkit_molecule, "torscount"):
+            AD4LigandWriter().write(self.molkit_molecule, "", inmem=True)
+            AD4LigandWriter().write(self.molkit_molecule, "", inmem=True)
 
         self.__register_molkit_molecule__(update_name=False)
         

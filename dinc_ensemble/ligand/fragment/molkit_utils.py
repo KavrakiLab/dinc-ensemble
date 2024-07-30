@@ -32,14 +32,45 @@ def create_tor_tree(molkit_mol: MolKitMolecule,
 
     # check that the torsion tree has been properly built
     check_tor_tree(molkit_mol.torTree.rootNode)
+    
+    # if not all tt_ind are assigned, delete them from the molecule (??)
+    no_tor_tree_list = []
+    for a in molkit_mol.allAtoms:
+        if not hasattr(a, "tt_ind"):
+            no_tor_tree_list.append(a)
+    molkit_mol = delete_molkit_atoms(molkit_mol, no_tor_tree_list)
 
     # sort the fragment's atoms based on their index in the torsion tree
     # (this is needed because of how StateToCoords works; see mglutil.math.statetocoords)
     molkit_mol.allAtoms = AtomSet(
         sorted(
-            molkit_mol.allAtoms, key=lambda a: a.tt_ind if hasattr(a, "tt_ind") else False
+            molkit_mol.allAtoms, key=lambda a: a.tt_ind
         )
     )
+
+def delete_molkit_atoms(molkit_molecule: MolKitMolecule,
+                             del_atoms: list[MolKitAtom]):
+        
+        # remove from the neighbor atom bond list
+        # the bonds associated with the deleted atoms
+        list(
+            map(
+                lambda a:[ #remove bond from the neighboring atoms
+                           b.neighborAtom(a).bonds.remove(b) \
+                           #for all bonds belonging to the atom being deleted
+                           for b in a.bonds 
+                           #if the bond is exists in the neighbor atom
+                           if b in b.neighborAtom(a).bonds],
+                del_atoms,
+            )
+        )
+        # remove nonbonded atoms if any remain
+        for a in molkit_molecule.allAtoms:
+            if len(a.bonds) == 0:
+                del_atoms.append(a)
+        # delete all those atoms
+        molkit_molecule.allAtoms -= AtomSet(del_atoms)
+        return molkit_molecule
 
 # Compute the dihedral angle between the points with Cartesian coordinates x1, x2, x3, x4.
 # Return the angle of the x2-x3 bond in degrees.
@@ -52,8 +83,11 @@ def dihedral(x1, x2, x3, x4):
     b3 /= norm(b3)
     v1 = b1 - dot(b1, b3) * b3
     v2 = b2 - dot(b2, b3) * b3
+    print(norm(v1))
+    print(norm(v2))
     if norm(v1) < 0.001 or norm(v2) < 0.001:
         raise ValueError("Dihedral angle undefined: degenerate points")
+    print(degrees(arctan2(dot(cross(b3, v1), v2), dot(v1, v2))))
     return degrees(arctan2(dot(cross(b3, v1), v2), dot(v1, v2)))
 
 

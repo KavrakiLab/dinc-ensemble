@@ -121,7 +121,7 @@ def prepare_receptor_ad4(
     outputfilename =""
     inmem = True
 
-    logger.info("setting up RPO with mode=", mode, end=' ')
+    logger.info("setting up RPO with mode=", mode)
     logger.info("and outputfilename= ", outputfilename)
     logger.info("charges_to_add=", charges_to_add)
     logger.info("inmem=", inmem)

@@ -79,6 +79,12 @@ def prepare_dinc_thread_elems(dinc_run_info: DINCRunInfo,
     logger.info("-------------------------------------")
     logger.info("DINC-Ensemble: Loaded ligand")
     logger.info("-------------------------------------")
+    
+    logger.info("-------------------------------------")
+    logger.info("DINC-Ensemble: Randomize ligand")
+    logger.info("-------------------------------------")
+
+    
     fragment = None
     if dock_type == DINC_DOCK_TYPE.INCREMENTAL:
         fragment = DINCFragment(ligand, DINC_FRAG_PARAMS)

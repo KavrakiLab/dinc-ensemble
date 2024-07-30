@@ -71,7 +71,7 @@ class PreprocessMoleculeStrategy(ABC):
         logger.info("Processing ligand with {} strategy".format(cls.strategy_name))
         # this way we will make sure that all the changes are reflected in the ligand properties
         processed_ligand = cls.process_specific(ligand) 
-        processed_ligand.__reset__(processed_ligand.molkit_molecule)
+        processed_ligand.__reset__(processed_ligand.molkit_molecule, prepare=False)
         return processed_ligand
     
     @classmethod

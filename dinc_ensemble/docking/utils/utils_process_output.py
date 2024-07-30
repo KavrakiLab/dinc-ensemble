@@ -1,6 +1,7 @@
 from MolKit import Read as MolKitRead
 from mglutil.math.statetocoords import StateToCoords
 from AutoDockTools.Conformation import Conformation
+from AutoDockTools.cluster import Clusterer
 
 from numpy import array
 from numpy.linalg import norm
@@ -27,6 +28,17 @@ def extract_vina_conformations(docking_file: str):
     #valid_conformations = select_clash_free_confs(conformations)
     return conformations
     
+def cluster_conformations(conformations, rmsd_tolerance=3):
+
+    clusterer = Clusterer(conformations)
+    clusterer.make_clustering(rmsd_tolerance)
+    all_clusters = clusterer.clustering_dict[rmsd_tolerance]
+    all_clusters.sort(key=lambda c: len(c), reverse=True)
+    for k, cluster in enumerate(all_clusters):
+        for n, conf in enumerate(cluster):
+            conf.clust_size_rank = k + 1
+            conf.clust_nrg_rank = n + 1
+    return conformations
 
 #TODO: figure out bonded atoms
 def select_clash_free_confs(conformationSet, bonded_atoms):

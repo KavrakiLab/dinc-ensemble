@@ -7,7 +7,7 @@ import threading
 from ...parameters import DINC_JOB_TYPE, DINC_RECEPTOR_PARAMS, DINC_CORE_PARAMS, SCORE_F
 from ...analysis.rmsd import calculate_rmsd 
 from ..dinc_job_elem import DINCThreadElem
-from ..utils.utils_process_output import extract_vina_conformations
+from ..utils.utils_process_output import extract_vina_conformations, cluster_conformations
 from .dinc_thread import DINCDockThread
 from ...parameters.dock_engine_vina import VinaEngineParams
 
@@ -55,7 +55,10 @@ class DINCDockThreadVina(DINCDockThread):
     
     def dock(self):
         try:
-            self.vina.dock()
+            self.vina.dock(exhaustiveness=self.params.exhaustive,
+                       n_poses=self.params.n_poses,
+                       max_evals=self.params.max_evals,
+                       min_rmsd=self.params.min_rmsd)
         except Exception as e:
             logger.error("Failed docking with Vina thread \n {}".format(e))
             self.exception = e
@@ -146,8 +149,10 @@ class DINCDockThreadVina(DINCDockThread):
         
     
     def write_results_load_conf(self, update_fragment=True):
-        #1 - write poses                                                                                       self.replica)) # type: ignore
-        self.vina.write_poses(str(self.results_pdbqt), overwrite=True)
+        #1 - write poses                                                                                    
+        self.vina.write_poses(str(self.results_pdbqt), 
+                              n_poses=self.params.n_poses,
+                              overwrite=True)
         conformations = extract_vina_conformations(str(self.results_pdbqt))
         self.conformations = conformations
 
@@ -157,7 +162,8 @@ class DINCDockThreadVina(DINCDockThread):
         if DINC_CORE_PARAMS.dock_type == DINC_JOB_TYPE.CROSSDOCK:
             ref_ligand = self.conformations[0].molecule
         #2 - get energies
-        energies = self.vina.energies()[:, 0]
+        energies = self.vina.energies(self.params.n_poses)[:, 0]
+        print(len(energies))
         #3 - compute RMSD
         model_ids = []
         rmsds = []
@@ -165,6 +171,7 @@ class DINCDockThreadVina(DINCDockThread):
             rmsd = calculate_rmsd(conf, ref_ligand, self.output_dir)
             rmsds.append(rmsd)
             model_ids.append(i)
+        print(len(self.conformations))
         #4 - TODO: plot RMSD vs energy plot
         df_results = pd.DataFrame({"energies": energies,
                                    "rmsds": rmsds,
@@ -187,8 +194,6 @@ class DINCDockThreadVina(DINCDockThread):
 
         # note that the job started
         #self.prepare()
-        self.score()
-        self.optimize()
         if self.frag_index == 0:
             logger.info("Randomize and dock")
             self.randomize_and_dock()
@@ -213,6 +218,7 @@ class DINCDockThreadVina(DINCDockThread):
                                    "receptor_id":[],
                                    "fragment_id":[],
                                    "thread_id":[]})
+        all_conformations = []
         n_thr = len(dinc_job_threads)
         for i, t in enumerate(dinc_job_threads):
             frag_idx = t.frag_index
@@ -225,23 +231,50 @@ class DINCDockThreadVina(DINCDockThread):
             res["fragment_id"] = res["energies"].apply(lambda x: fragment_idx)
             res["thread_id"] = res["energies"].apply(lambda x: i)
             all_results = pd.concat([all_results, res])
+            all_conformations.extend(t.conformations)
+        #cluster conformations add that info
+        cluster_conformations(all_conformations)
+        all_results["clust_energy_rank"] = all_results.apply(lambda x:
+                                            dinc_job_threads[int(x["thread_id"])].conformations[int(x["model_id"])].clust_nrg_rank
+                                            , axis=1)
+        all_results["clust_size_rank"] = all_results.apply(lambda x:
+                                            dinc_job_threads[int(x["thread_id"])].conformations[int(x["model_id"])].clust_size_rank
+                                            , axis=1)
         all_results = all_results.sort_values(by = ["energies", "rmsds"]).reset_index(drop=True)
         intermediate_result = t.output_dir / Path("results_frag_{}_collection.csv".format(frag_idx))
         all_results.to_csv(intermediate_result)
-        
         # 2 - get best energy conformations
         # 3 - initialize next fragments in threads with those conformations
         next_iter_threads = []
         for i, t in enumerate(dinc_job_threads):
-            
-            top_i_conf_thr =  int(all_results.iloc[0].thread_id)
-            top_i_conf_model =  int(all_results.iloc[0].model_id)
+            rec_name = t.receptor_name
+            replica_id = t.replica
+            rec_res = all_results[all_results["receptor_id"]==rec_name]
+            # remove redundancy, get unique clusters
+            rec_res = rec_res.sort_values(["clust_energy_rank", "clust_size_rank"]).groupby("clust_size_rank").head(1).reset_index()
+            print(rec_res)
+            if len(rec_res) > replica_id:
+                selected_res = rec_res.iloc[replica_id]
+            else:
+                selected_res = rec_res.iloc[0]
+            print(i)
+            print(selected_res)
+            top_i_conf_thr =  int(selected_res.thread_id)
+            top_i_conf_model =  int(selected_res.model_id)
             top_i_conf = dinc_job_threads[top_i_conf_thr].conformations[top_i_conf_model]
+            print(top_i_conf.coords)
+            print(t.fragment.split_frags[fragment_idx]._molecule.molkit_molecule.pdbqt_str)
             t.fragment.split_frags[fragment_idx]._init_conformation_(coords = top_i_conf.coords)
+            
             if fragment_idx+1 < len(t.fragment.split_frags):
                 cur_frag = t.fragment.split_frags[fragment_idx]
                 next_frag = t.fragment.split_frags[fragment_idx+1]
+                # check if the ligand is in the box!
                 cur_frag._expand_conf_(next_frag)
+                logger.debug("WRITING EXPANDED CONFORMATIONS")
+                trans_dir = t.output_dir / "transition_frag_{}_pdbqts".format(fragment_idx)
+                logger.debug("TO: {}".format(trans_dir))
+                t.fragment._write_pdbqt_frags_(trans_dir)
                 t.thread_elem.data.iterative_step += 1
                 new_thread = DINCDockThreadVina(t.thread_elem, t.params)
                 new_thread.frag_index = fragment_idx+1

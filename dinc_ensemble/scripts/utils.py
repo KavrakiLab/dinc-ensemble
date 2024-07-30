@@ -61,3 +61,16 @@ def init_all_dince_params(**kwargs):
         VINA_ENGINE_PARAMS.max_evals = kwargs["max_evals"]
     if "rand_steps" in kwargs:
         VINA_ENGINE_PARAMS.rand_steps = kwargs["rand_steps"]
+
+    if "frag_mode" in kwargs:
+        DINC_FRAG_PARAMS.frag_mode = kwargs["frag_mode"]
+    if "frag_size" in kwargs:
+        DINC_FRAG_PARAMS.frag_size = kwargs["frag_size"]
+    if "frag_new" in kwargs:
+        DINC_FRAG_PARAMS.frag_new = kwargs["frag_new"]
+    if "root_type" in kwargs:
+        DINC_FRAG_PARAMS.root_type = kwargs["root_type"]
+    if "root_auto" in kwargs:
+        DINC_FRAG_PARAMS.root_auto = kwargs["root_auto"]
+    if "root_name" in kwargs:
+        DINC_FRAG_PARAMS.root_name = kwargs["root_name"]

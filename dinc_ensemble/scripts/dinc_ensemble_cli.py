@@ -244,7 +244,25 @@ def dock(
     rand_steps: int = typer.Option(
         default=DEFAULT_RAND_STEPS,
         help=vina_docstrings["rand_steps"]
-        )
+        ),
+    frag_mode: DINC_FRAGMENT_MODE  = typer.Option(
+        default = DEFAULT_DINC_FRAGMENT_MODE,
+        help = fragment_docstrings["frag_mode"]),
+    frag_size: int = typer.Option(
+        default = DEFAULT_DINC_FRAG_SIZE,
+        help = fragment_docstrings["frag_size"]),
+    frag_new: int = typer.Option(
+        default = DEFAULT_DINC_FRAG_NEW,
+        help = fragment_docstrings["frag_new"]),
+    root_type: DINC_ROOT_TYPE = typer.Option(
+        default = DEFAULT_DINC_ROOT_TYPE,
+        help = fragment_docstrings["root_type"]),
+    root_auto: DINC_ROOT_AUTO = typer.Option(
+        default = DEFAULT_DINC_ROOT_AUTO,
+        help = fragment_docstrings["root_auto"]),
+    root_name: str = typer.Option(
+        default = None,
+        help = fragment_docstrings["root_name"])
     ):
 
     input_params = {
@@ -271,7 +289,13 @@ def dock(
         "seed" :seed,
         "min_rmsd" :min_rmsd,
         "max_evals" :max_evals,
-        "rand_steps" :rand_steps
+        "rand_steps" :rand_steps,
+        "frag_mode" :frag_mode,
+        "frag_size" :frag_size,
+        "frag_new" :frag_new,
+        "root_type" :root_type,
+        "root_auto" :root_auto,
+        "root_name" :root_name
     }
 
     init_all_dince_params(**input_params)
