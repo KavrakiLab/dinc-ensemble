@@ -35,7 +35,7 @@ class DINCDockThreadVina(DINCDockThread):
         self.output_dir = self.thread_elem.job_info.job_root
         self.params = vina_engine_params
         self.vina = self.prepare_vina_object()
-        if self.frag_index < len(self.fragment.fragments):
+        if self.fragment is None or self.frag_index < len(self.fragment.fragments):
             results_outfile = self.output_dir / Path("results_frag_{}_rep{}.csv".format(self.frag_index, self.replica)) # type: ignore
             self.results_file = results_outfile
             ligand_output = self.output_dir / Path(self.ligand_name+"frag_{}_rep_{}_out.pdbqt".format(self.frag_index,self.replica))
@@ -165,10 +165,10 @@ class DINCDockThreadVina(DINCDockThread):
                     self.bbox_dims = [DINC_RECEPTOR_PARAMS.bbox_dim_x,
                                 DINC_RECEPTOR_PARAMS.bbox_dim_y,
                                 DINC_RECEPTOR_PARAMS.bbox_dim_z]
-                if self.frag_index == len(self.fragment.fragments):
-                    self.bbox_dims = [self.bbox_dims[0]+2,
-                                      self.bbox_dims[1]+2,
-                                      self.bbox_dims[2]+2]
+                if self.fragment is None or self.frag_index == len(self.fragment.fragments):
+                    self.bbox_dims = [self.bbox_dims[0]+1,
+                                      self.bbox_dims[1]+1,
+                                      self.bbox_dims[2]+1]
                 logger.info("Vina preparing bbox : {} {}".format(self.bbox_dims, self.bbox_center))
                 self.vina.compute_vina_maps(
                     self.bbox_center,
@@ -222,7 +222,7 @@ class DINCDockThreadVina(DINCDockThread):
     
     def run(self): 
     # if the thread had already finished just continue to next
-        if self.frag_index < len(self.fragment.fragments) and self.results_pdbqt.exists():
+        if (self.fragment is None or self.frag_index < len(self.fragment.fragments)) and self.results_pdbqt.exists():
             logger.info("Continuing the job (found output files for thread).")
             logger.info("Continuing from iter step #{}".format(self.frag_index))
             if self.fragment is not None:
@@ -238,7 +238,7 @@ class DINCDockThreadVina(DINCDockThread):
         if self.frag_index == 0:
             logger.info("Randomize and dock")
             self.randomize_and_dock()
-        elif self.frag_index < len(self.fragment.fragments):
+        elif self.fragment is not None and self.frag_index < len(self.fragment.fragments):
             logger.info("Dock")
             self.dock()
         #if the final step is in question - activate all bonds and optimize?
@@ -275,7 +275,7 @@ class DINCDockThreadVina(DINCDockThread):
             #print(t.replica)
             #print(t.receptor)
             #print(t.results_pdbqt)
-            print(t.conformations)
+            #print(t.conformations)
             results_file = t.output_dir / Path("results_frag_{}_rep{}.csv".format(frag_idx, t.replica)) # type: ignore
             # results file will have
             res = pd.read_csv(results_file)

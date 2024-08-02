@@ -4,6 +4,7 @@ from .threads.dinc_vina_thread import DINCDockThreadVina
 
 from typing import List
 import pandas as pd
+import time
 from dinc_ensemble.parameters import *
 from dinc_ensemble import write_ligand
 from dinc_ensemble.ligand import DINCMolecule
@@ -23,8 +24,8 @@ def dinc_full_run(ligand_file: str,
     # 1 - initialize receptors (align and binding box)
     # 2 - initialize ligands
     # 3 - initialize fragments
+    start_time = time.time()
     dinc_thread_info_df, dinc_thread_elem, dinc_run_info = init_dinc_ensemble_threads(ligand_file, receptor_files)
-
 
     root_dir = dinc_run_info.root
     analysis_dir = dinc_run_info.analysis
@@ -146,6 +147,19 @@ def dinc_full_run(ligand_file: str,
             ligand = DINCMolecule(conf.mol, prepare=False)
             write_ligand(ligand, str(dinc_run_info.analysis / Path("top_clust_{}.pdb".format(i))))
 
+        if DINC_CORE_PARAMS.job_type == DINC_JOB_TYPE.REDOCK:
+            all_results = all_results.sort_values("rmsds")
+            out_rmsd_results = all_results[all_results["fragment_id"]==frag_cnt-1][:n_out]
+            for i, res in out_rmsd_results.iterrows():
+                thr_id = int(res["thread_id"])
+                job_id = res["job_id"]
+                model_id = int(res["model_id"])
+                thr = dinc_frag_threads_per_job[job_id][thr_id]
+                conf = thr.conformations[model_id]
+                
+                ligand = DINCMolecule(conf.mol, prepare=False)
+                write_ligand(ligand, str(dinc_run_info.analysis / Path("top_rmsd_{}.pdb".format(i))))
+
 
     
     # DOCK TYPE CLASSIC
@@ -181,16 +195,27 @@ def dinc_full_run(ligand_file: str,
                                    "replica_id":[],
                                    "receptor_id":[],
                                    "thread_id":[]})
-        
+        all_conformations = []
         for i, t in enumerate(dinc_job_threads):
             # results file will have
+            print(t.results_file)
             res = pd.read_csv(t.results_file)
             res["energies"] = res["energies"].apply(lambda x: float(x))
             res["replica_id"] = res["energies"].apply(lambda x: t.replica)
             res["receptor_id"] = res["energies"].apply(lambda x: t.receptor_name)
             res["thread_id"] = res["energies"].apply(lambda x: i)
+            t.write_results_load_conf(write=False)
+            all_conformations.extend(t.conformations)
             all_results = pd.concat([all_results, res])
-        all_results = all_results.sort_values(by = ["energies", "rmsds"]).reset_index(drop=True)
+        
+        cluster_conformations(all_conformations)
+        all_results["clust_energy_rank"] = all_results.apply(lambda x:
+                                            dinc_job_threads[int(x["thread_id"])].conformations[int(x["model_id"])].clust_nrg_rank
+                                            , axis=1)
+        all_results["clust_size_rank"] = all_results.apply(lambda x:
+                                            dinc_job_threads[int(x["thread_id"])].conformations[int(x["model_id"])].clust_size_rank
+                                            , axis=1)
+        all_results = all_results.sort_values(by = ["energies",  "clust_size_rank", "clust_energy_rank"]).reset_index(drop=True)
         all_results.to_csv(dinc_run_info.analysis / Path("results.csv"))
         
         logger.info("-------------------------------------")
@@ -205,9 +230,45 @@ def dinc_full_run(ligand_file: str,
             thr = dinc_job_threads[thr_id]
             conf = thr.conformations[model_id]
             ligand = DINCMolecule(conf.mol, prepare=False)
-            write_ligand(ligand, str(dinc_run_info.analysis / Path("result_top{}.pdb".format(i))))
+            write_ligand(ligand, str(dinc_run_info.analysis / Path("top_energy_{}.pdb".format(i))))
 
+        n_out = DINC_CORE_PARAMS.n_out
+        out_results = all_results[:n_out]
+        for i, res in out_results.iterrows():
+            thr_id = int(res["thread_id"])
+            model_id = int(res["model_id"])
+            thr = dinc_job_threads[thr_id]
+            thr.write_results_load_conf(write=False)
+            ligand = DINCMolecule(conf.mol, prepare=False)
+            write_ligand(ligand, str(dinc_run_info.analysis / Path("top_energy_{}.pdb".format(i))))
+            
+        all_results = all_results.sort_values("clust_size_rank")
+        all_results_clust = all_results.drop_duplicates(['clust_size_rank']).reset_index()
+        out_clust_results = all_results_clust[:n_out]
+        for i, res in out_clust_results.iterrows():
+            thr_id = int(res["thread_id"])
+            model_id = int(res["model_id"])
+            thr = dinc_job_threads[thr_id]
+            thr.write_results_load_conf(write=False)
+            ligand = DINCMolecule(conf.mol, prepare=False)
+            write_ligand(ligand, str(dinc_run_info.analysis / Path("top_clust_{}.pdb".format(i))))
+
+        if DINC_CORE_PARAMS.job_type == DINC_JOB_TYPE.REDOCK:
+            # write the minimum rmsd poses too
+            all_results = all_results.sort_values("rmsds")
+            out_results = all_results_clust[:n_out]
+            for i, res in out_results.iterrows():
+                thr_id = int(res["thread_id"])
+                model_id = int(res["model_id"])
+                thr = dinc_job_threads[thr_id]
+                thr.write_results_load_conf(write=False)
+                ligand = DINCMolecule(conf.mol, prepare=False)
+                write_ligand(ligand, str(dinc_run_info.analysis / Path("top_rmsd_{}.pdb".format(i))))
+
+        
+    end_time = time.time()
     logger.info("-------------------------------------")
     logger.info("DINC-Ensemble: Finished running DINC-Ensemble!")
+    logger.info("Total running time: {}s".format(end_time - start_time))
     logger.info("DINC-Ensemble: See the results here: {}".format(dinc_run_info.analysis))
     logger.info("-------------------------------------")

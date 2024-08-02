@@ -74,10 +74,9 @@ class DINCFragment:
 
         self._frag_mode = frag_params.frag_mode
         if self._frag_mode == DINC_FRAGMENT_MODE.AUTO:
-            self._frag_new  = 3
-            # size is SZ == FULL-9
-            possible_tors = self._molecule.bonds[self._molecule.bonds.possibleTors_ == 1].shape[0]
-            self._frag_size = max(4, possible_tors - 9)
+            torscnt = self._molecule.bonds[self._molecule.bonds.possibleTors_ == 1].shape[0]
+            self._frag_new  = min(max(torscnt - 6, 0), 3)
+            self._frag_size = torscnt - self._frag_new
         else:
             self._frag_size = frag_params.frag_size
             self._frag_new  = frag_params.frag_new

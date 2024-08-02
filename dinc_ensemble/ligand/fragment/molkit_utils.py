@@ -207,21 +207,13 @@ def dihedral(x1, x2, x3, x4):
 #     and the number of "previous bonds" that have to be kept active is frag_size - new_bonds
 
 def freeze_molkit_bonds(prev_frag, new_frag, frag_size, frag_new):
-    previous_frag_possible_bonds = [(b.atom1, b.atom2) for b in prev_frag.allAtoms.bonds[0] if b.possibleTors]
-    new_frag_bonds = [b for b in new_frag.allAtoms.bonds[0] if b.possibleTors]
-    # activate all possible new bonds
-    for b in new_frag_bonds:
-        b.activeTors = True
-    # determine the number of bonds to freeze from the previous fragment
-    active_remain = frag_size-frag_new
-    # choose random bonds to remain active
-    for _ in range(active_remain):
-        previous_frag_possible_bonds.pop(random.randrange(len(previous_frag_possible_bonds)))
-    # freeze others
-    for b in previous_frag_possible_bonds:
+    previous_bonds = [(b.atom1, b.atom2) for b in prev_frag.allAtoms.bonds[0] if b.possibleTors]
+    allBonds = [b for b in new_frag.allAtoms.bonds[0] if b.possibleTors]
+    for _ in range(frag_size - (len(allBonds) - len(previous_bonds))):
+        previous_bonds.pop(random.randrange(len(previous_bonds)))
+    for b in previous_bonds:
         bond_atoms = set([b[0].name, b[1].name])
-        next(b for b in new_frag_bonds \
-             if set([b.atom1.name, b.atom2.name]) == bond_atoms).activeTors = False
+        next(b for b in allBonds if set([b.atom1.name, b.atom2.name]) == bond_atoms).activeTors = False
     new_frag.torscount = frag_size
 
 
