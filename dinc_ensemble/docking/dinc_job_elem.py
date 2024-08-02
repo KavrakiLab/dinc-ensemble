@@ -94,7 +94,7 @@ class DINCThreadElem:
                 "ligand_name": [self.job_info.ligand_name],
                 "replica": [self.data.replica],
                 "fragment_id": [self.data.iterative_step],
-                "fragment_cnt": [len(self.data.fragment.split_frags) \
+                "fragment_cnt": [len(self.data.fragment.fragments) \
                                  if self.data.fragment is not None \
                                     else 1]
                             })

@@ -7,7 +7,8 @@ from numpy import array
 from numpy.linalg import norm
 
 
-def extract_vina_conformations(docking_file: str):
+def extract_vina_conformations(docking_file: str, 
+                               original_ligand):
 
     ligands = MolKitRead(docking_file)
     ligand = ligands[0]
@@ -25,8 +26,13 @@ def extract_vina_conformations(docking_file: str):
         c.binding_energy = l.vina_energy # type: ignore
         conformations.append(c)
 
-    #valid_conformations = select_clash_free_confs(conformations)
-    return conformations
+    bonded_atoms = {}
+    for atom in original_ligand.allAtoms:
+        bonded_atoms[atom.name] = [b.neighborAtom(atom).name for b in atom.bonds]
+
+    valid_conformations = select_clash_free_confs(conformations, 
+                                                  bonded_atoms=bonded_atoms)
+    return valid_conformations
     
 def cluster_conformations(conformations, rmsd_tolerance=3):
 
@@ -52,7 +58,7 @@ def select_clash_free_confs(conformationSet, bonded_atoms):
             for at in atomList:
                 if at.name not in bonded_atoms[atom.name]:
                     dist = norm(array(atom.coords) - array(at.coords))
-                    if dist < 1.2 * (atom.bondOrderRadius + at.bondOrderRadius):
+                    if dist < 1.3 * (atom.bondOrderRadius + at.bondOrderRadius):
                         clash = True
                         break
             if clash:

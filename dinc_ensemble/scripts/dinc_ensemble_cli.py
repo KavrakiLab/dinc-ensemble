@@ -110,27 +110,25 @@ def fragment(
                         root_type=DINC_FRAG_PARAMS.root_type,
                         root_auto=DINC_FRAG_PARAMS.root_auto,
                         root_name=DINC_FRAG_PARAMS.root_name))
-    frag._split_to_fragments_()
 
     # this expansion will inactivate certain bonds that should be inactive
-    for i, sfrag in enumerate(frag.split_frags[:-1]):
-        sfrag._freeze_prev_bonds(frag.split_frags[i+1])
+    frag.freeze_bonds()
 
     if not output_dir.exists():
         output_dir.mkdir(parents=True, exist_ok=True)
-    frag._write_pdbqt_frags_(out_dir=output_dir)
-    frag._write_svg_frags_(out_dir=output_dir)
-    info_table_fname = lig.molkit_molecule.name + "_frag_info.html"
-    frags_info_df = frag._to_df_frags_info_()
-    frags_info_df["frag_svg_path"] = frags_info_df["frag_pdbqt"].apply(lambda x: str(x).split(".")[0]+".svg") # type: ignore
-    frags_info_df["frag_svg"] = frags_info_df["frag_svg_path"].apply(lambda x: '''<img src=\"./{}\"/>'''.format(x)) # type: ignore
-    frags_info_df = frags_info_df[["frag_id", # type: ignore
-                                    "frag_dof",
-                                    "frag_pdbqt",
-                                    "frag_svg"]]
-    frag_info_html = frags_info_df.to_html(render_links=True,escape=False)
-    with open(path.join(output_dir, info_table_fname), "w") as f:
-        f.write(frag_info_html)
+    frag.write_pdbqt_frags(out_dir=output_dir)
+    #frag._write_svg_frags_(out_dir=output_dir)
+    #info_table_fname = lig.molkit_molecule.name + "_frag_info.html"
+    #frags_info_df = frag._to_df_frags_info_()
+    #frags_info_df["frag_svg_path"] = frags_info_df["frag_pdbqt"].apply(lambda x: str(x).split(".")[0]+".svg") # type: ignore
+    #frags_info_df["frag_svg"] = frags_info_df["frag_svg_path"].apply(lambda x: '''<img src=\"./{}\"/>'''.format(x)) # type: ignore
+    #frags_info_df = frags_info_df[["frag_id", # type: ignore
+    #                                "frag_dof",
+    #                                "frag_pdbqt",
+    #                                "frag_svg"]]
+    #frag_info_html = frags_info_df.to_html(render_links=True,escape=False)
+    #with open(path.join(output_dir, info_table_fname), "w") as f:
+    #    f.write(frag_info_html)
 
 
 core_docstrings = DincCoreParams.__doc_arg__ if DincCoreParams.__doc_arg__ is not None else {}

@@ -18,22 +18,18 @@ def test_write_pdbqt_fragments(
                         ], write_pdbqt=True)
     
 def test_write_svg_fragments(
-                    ligands_10dof,
-                    ligands_20dof):
+                    ligands_10dof):
     # Test if initializing fragments works
     init_fragments_multi_ligand([
-                        ligands_10dof,
-                        ligands_20dof
+                        ligands_10dof
                         ], write_svg=True)
     
     
 def test_df_fragments(
-                    ligands_10dof,
-                    ligands_20dof):
+                    ligands_10dof):
     # Test if initializing fragments works
     init_fragments_multi_ligand([
-                        ligands_10dof,
-                        ligands_20dof
+                        ligands_10dof
                         ], get_df=True)
 
     

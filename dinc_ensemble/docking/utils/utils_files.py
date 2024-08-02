@@ -88,25 +88,26 @@ def prepare_dinc_thread_elems(dinc_run_info: DINCRunInfo,
     fragment = None
     if dock_type == DINC_DOCK_TYPE.INCREMENTAL:
         fragment = DINCFragment(ligand, DINC_FRAG_PARAMS)
-        fragment._split_to_fragments_()
+
         # this expansion will inactivate certain bonds that should be inactive
-        for i, sfrag in enumerate(fragment.split_frags[:-1]):
-            sfrag._freeze_prev_bonds(fragment.split_frags[i+1])
+        fragment.freeze_bonds()
+        #for i, sfrag in enumerate(fragment.split_frags[:-1]):
+        #    sfrag._freeze_prev_bonds(fragment.split_frags[i+1])
         output_dir = str(dinc_run_info.ligand.parent)
-        fragment._write_pdbqt_frags_(out_dir=output_dir)
-        fragment._write_svg_frags_(out_dir=output_dir)
-        info_table_fname = ligand.molkit_molecule.name + "_frag_info.html"
-        frags_info_df = fragment._to_df_frags_info_()
-        frags_info_df["frag_svg_path"] = frags_info_df["frag_pdbqt"].apply(lambda x: str(x).split(".")[0]+".svg") # type: ignore
-        frags_info_df["frag_svg"] = frags_info_df["frag_svg_path"].apply(lambda x: '''<img src=\"./{}\"/>'''.format(x)) # type: ignore
-        frags_info_df = frags_info_df[["frag_id", # type: ignore
-                                        "frag_dof",
-                                        "frag_pdbqt",
-                                        "frag_svg"]]
-        fragment.info_df = frags_info_df
-        frag_info_html = frags_info_df.to_html(render_links=True,escape=False)
-        with open(path.join(output_dir, info_table_fname), "w") as f:
-            f.write(frag_info_html)
+        fragment.write_pdbqt_frags(out_dir=output_dir)
+        #fragment._write_svg_frags_(out_dir=output_dir)
+        #info_table_fname = ligand.molkit_molecule.name + "_frag_info.html"
+        #frags_info_df = fragment._to_df_frags_info_()
+        #frags_info_df["frag_svg_path"] = frags_info_df["frag_pdbqt"].apply(lambda x: str(x).split(".")[0]+".svg") # type: ignore
+        #frags_info_df["frag_svg"] = frags_info_df["frag_svg_path"].apply(lambda x: '''<img src=\"./{}\"/>'''.format(x)) # type: ignore
+        #frags_info_df = frags_info_df[["frag_id", # type: ignore
+        #                                "frag_dof",
+        #                                "frag_pdbqt",
+        #                                "frag_svg"]]
+        #fragment.info_df = frags_info_df
+        #frag_info_html = frags_info_df.to_html(render_links=True,escape=False)
+        #with open(path.join(output_dir, info_table_fname), "w") as f:
+        #    f.write(frag_info_html)
 
         logger.info("-------------------------------------")
         logger.info("DINC-Ensemble: Loaded fragment")

@@ -8,6 +8,7 @@ from dinc_ensemble.parameters import *
 from dinc_ensemble import write_ligand
 from dinc_ensemble.ligand import DINCMolecule
 from pathlib import Path
+from .utils.utils_process_output import cluster_conformations
 
 import logging
 logger = logging.getLogger('dinc_ensemble.docking.run')
@@ -48,7 +49,7 @@ def dinc_full_run(ligand_file: str,
         
         frag_cnt = 0
         if len(dinc_thread_elem) >= 1:
-            frag_cnt = len(dinc_thread_elem[0].data.fragment.split_frags)
+            frag_cnt = len(dinc_thread_elem[0].data.fragment.fragments)
         
         # Initialize the threads for jobs
         dinc_frag_threads = []
@@ -78,7 +79,25 @@ def dinc_full_run(ligand_file: str,
                 for t in current_job_threads:
                     t.join()
                 dinc_frag_threads_per_job[job] = current_job_threads
+                #if frag_idx < frag_cnt - 1:
                 current_job_threads = DINCDockThreadVina.next_step(current_job_threads, frag_idx)
+                #else:
+                # final step - maybe not needed?
+                # x = 0
+                '''
+                final_threads = DINCDockThreadVina.final_step(current_job_threads, frag_idx)
+                logger.info("-------------------------------------")
+                logger.info("DINC-Ensemble: Final thread (all bonds active) for - Job #{}; Fragment{};".format(job,frag_idx))
+                logger.info("-------------------------------------")
+                # for all receptor threads (replicas)
+                for t in final_threads:
+                    t.start()
+                # wait for one iterative round per job
+                for t in final_threads:
+                    t.join()
+                '''
+
+                    
             
 
         logger.info("-------------------------------------")
@@ -96,6 +115,7 @@ def dinc_full_run(ligand_file: str,
                 else:
                     all_results = pd.concat([all_results, res_df])
         all_results = all_results.sort_values(by = ["energies", "rmsds"]).reset_index(drop=True)
+        all_results = all_results.drop_duplicates().reset_index()
         all_results.to_csv(dinc_run_info.analysis / Path("results.csv"))
 
         logger.info("-------------------------------------")
@@ -110,8 +130,22 @@ def dinc_full_run(ligand_file: str,
             model_id = int(res["model_id"])
             thr = dinc_frag_threads_per_job[job_id][thr_id]
             conf = thr.conformations[model_id]
+            
             ligand = DINCMolecule(conf.mol, prepare=False)
-            write_ligand(ligand, str(dinc_run_info.analysis / Path("result_top{}.pdb".format(i))))
+            write_ligand(ligand, str(dinc_run_info.analysis / Path("top_energy_{}.pdb".format(i))))
+        all_results = all_results.sort_values("clust_size_rank")
+        all_results_clust = all_results.drop_duplicates(['clust_size_rank']).reset_index()
+        out_clust_results = all_results_clust[all_results_clust["fragment_id"]==frag_cnt-1][:n_out]
+        for i, res in out_clust_results.iterrows():
+            thr_id = int(res["thread_id"])
+            job_id = res["job_id"]
+            model_id = int(res["model_id"])
+            thr = dinc_frag_threads_per_job[job_id][thr_id]
+            conf = thr.conformations[model_id]
+            
+            ligand = DINCMolecule(conf.mol, prepare=False)
+            write_ligand(ligand, str(dinc_run_info.analysis / Path("top_clust_{}.pdb".format(i))))
+
 
     
     # DOCK TYPE CLASSIC

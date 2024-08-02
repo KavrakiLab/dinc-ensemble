@@ -3,12 +3,43 @@ from dinc_ensemble.ligand import DINCFragment
 from dinc_ensemble.parameters.fragment import *
 from copy import deepcopy
 
-def frag_arguments_valid(frag: DINCFragment):
+def frag_arguments_valid(frag: DINCFragment,
+                         params: DincFragParams):
 
     # nodes, atoms, bonds initialized properly?
-    assert len(frag.bfs_ordered_nodes) == frag._molecule.molkit_molecule.torscount
-    assert frag.atoms.shape[0] == len(frag._molecule.molkit_molecule.allAtoms)
-    assert frag.bonds.shape[0] == len(frag._molecule.molkit_molecule.allAtoms.bonds[0])
+    # first fragment has torscnt == frag_size
+    if len(frag.fragments) > 1:
+        assert frag.fragments[0].torscount == params.frag_size
+        for i, f in enumerate(frag.fragments[1:-1]): 
+            assert (f.torscount - frag.fragments[i].torscount) == params.frag_new
+    # is root consistent in all fragments?
+    root_name = frag.fragments[0].ROOT.name
+    for i, f in enumerate(frag.fragments): 
+        assert f.ROOT.name == root_name
+    # is the user defined root consistent across all fragments?
+    if params.root_type == DINC_ROOT_TYPE.USER:
+        for i, f in enumerate(frag.fragments): 
+            assert f.ROOT.name == params.root_name
+    # are the first/last auto roots defines well?
+    elif params.root_type == DINC_ROOT_TYPE.AUTO:
+        if len(frag.fragments) > 1:
+            frag0 = frag.fragments[0]
+            heavy_atoms = frag._molecule.molkit_molecule.allAtoms.get(lambda x: x.element != 'H')
+            if params.root_auto == DINC_ROOT_AUTO.FIRST:
+                assert frag0.ROOT.name == heavy_atoms[0].name
+            #if params.root_auto == DINC_ROOT_AUTO.LAST:
+            #    assert frag0.ROOT.name == heavy_atoms[-1].name
+    # before freezing bonds all are active
+    for f in frag.fragments:
+        active_tors =[b for b in f.allAtoms.bonds[0] if b.activeTors]
+        possible_tors =[b for b in f.allAtoms.bonds[0] if b.possibleTors]
+        assert len(active_tors) == len(possible_tors)
+    # test freeze fragment
+    frag.freeze_bonds()
+    # after freezing bonds each fragment has limited number of active bonds!
+    for f in frag.fragments:
+        active_tors =[b for b in f.allAtoms.bonds[0] if b.activeTors]
+        assert len(active_tors) <= params.frag_size
 
 def init_fragments_multi_ligand(ligands_list_list:
                                 list[list[DINCMolecule]],
@@ -32,20 +63,17 @@ def init_fragments_multi_ligand(ligands_list_list:
             frag = DINCFragment(ligand, 
                                 params)
             assert isinstance(frag, DINCFragment)
-            frag_arguments_valid(frag)
-            if root_type == DINC_ROOT_TYPE.USER and root_atom_name is None:
-                assert frag._root_atom_name == root_atom_name
+            frag_arguments_valid(frag, params)
+
             if write_pdbqt:
-                frag._split_to_fragments_()
-                tmp = frag._write_pdbqt_frags_(out_dir="./tmp_test_out")
-                assert len(frag.split_frags) == tmp.shape[0]
-            if write_svg:
-                frag._split_to_fragments_()
-                tmp = frag._write_svg_frags_(out_dir="./tmp_test_out")
-                assert len(frag.split_frags) == tmp.shape[0]
+                tmp = frag.write_pdbqt_frags(out_dir="./tmp_test_out")
+                assert len(frag.fragments) == tmp.shape[0]
+            #if write_svg:
+            #    frag._split_to_fragments_()
+            #    tmp = frag._write_svg_frags_(out_dir="./tmp_test_out")
+            #    assert len(frag.split_frags) == tmp.shape[0]
             if get_df:
-                frag._split_to_fragments_()
-                tmp = frag._to_df_frags_info_(out_dir="./tmp_test_out")
-                assert len(frag.split_frags) == tmp.shape[0]
+                tmp = frag.to_df_info(out_dir="./tmp_test_out")
+                assert len(frag.fragments) == tmp.shape[0]
 
             

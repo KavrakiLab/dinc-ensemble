@@ -15,10 +15,10 @@ DEFAULT_SCORE_F = SCORE_F.VINA
 DEFAULT_VINA_EXHAUSTIVE: int = 8
 
 # Number of outputs to produce in each round
-DEFAULT_VINA_N_POSES: int = 20
+DEFAULT_VINA_N_POSES: int = 100
 
 # Number of cpus to use by vina (0 - all)
-DEFAULT_VINA_CPU_CNT: int = 0
+DEFAULT_VINA_CPU_CNT: int = 4
 
 # Vina seed
 DEFAULT_VINA_SEED: int = 0

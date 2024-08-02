@@ -28,7 +28,7 @@ DEFAULT_DOCK_ENGINE = DINC_DOCK_ENGINE.VINA
 
 # Number of threads allocated for the parallelized docking protocol.
 # 4  for all
-DEFAULT_DINC_NUM_REPLICAS: int = 4
+DEFAULT_DINC_NUM_REPLICAS: int = 24
 
 # Directory for all outputs (default: the place where t is runnning)
 DEFAULT_OUTPUT_DIR:str = "."
