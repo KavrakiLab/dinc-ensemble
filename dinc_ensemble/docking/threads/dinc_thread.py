@@ -1,4 +1,5 @@
 from os import path
+from multiprocessing import Process
 from threading import Thread
 from abc import ABCMeta, abstractmethod
 
@@ -18,12 +19,13 @@ logger.setLevel(logging.DEBUG)
 #   flex: name of the file containing the flexible residues of the protein receptor
 #   params: parameters of the docking job
 ##
-class DINCDockThread(Thread, 
+class DINCDockThread(Process, 
                      metaclass = ABCMeta):
 
     def __init__(self,
                  thread_elem: DINCThreadElem):
         
+        super().__init__()
         self.thread_elem = thread_elem
 
         self.fragment: DINCFragment = thread_elem.data.fragment
@@ -47,7 +49,6 @@ class DINCDockThread(Thread,
         logger.info("Receptor: "+ path.basename(self.receptor_name))
         logger.info("Replica: {}".format(self.replica))
         
-        Thread.__init__(self)
 
     # Prepare for docking:
     # - define binding box

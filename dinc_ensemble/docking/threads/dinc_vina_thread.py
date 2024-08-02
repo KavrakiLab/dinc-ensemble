@@ -13,7 +13,6 @@ from ...parameters.dock_engine_vina import VinaEngineParams
 
 from vina import Vina
 
-from sklearn.cluster import DBSCAN
 import numpy as np
 
 import logging
@@ -189,9 +188,10 @@ class DINCDockThreadVina(DINCDockThread):
         '''
         
     
-    def write_results_load_conf(self, update_fragment=True):
-        #1 - write poses                                                                                    
-        self.vina.write_poses(str(self.results_pdbqt), 
+    def write_results_load_conf(self, update_fragment=True, write=True):
+        #1 - write poses
+        if write:
+            self.vina.write_poses(str(self.results_pdbqt), 
                               n_poses=self.params.n_poses,
                               overwrite=True)
         conformations = extract_vina_conformations(str(self.results_pdbqt),
@@ -270,6 +270,12 @@ class DINCDockThreadVina(DINCDockThread):
         n_thr = len(dinc_job_threads)
         for i, t in enumerate(dinc_job_threads):
             frag_idx = t.frag_index
+            t.write_results_load_conf()
+            #print(t.frag_index)
+            #print(t.replica)
+            #print(t.receptor)
+            #print(t.results_pdbqt)
+            print(t.conformations)
             results_file = t.output_dir / Path("results_frag_{}_rep{}.csv".format(frag_idx, t.replica)) # type: ignore
             # results file will have
             res = pd.read_csv(results_file)
@@ -337,6 +343,9 @@ class DINCDockThreadVina(DINCDockThread):
         # 3 - initialize next fragments in threads with those conformations
         next_iter_threads = []
         for i, t in enumerate(dinc_job_threads):
+            #print(t.receptor_name)
+            #print(t.replica)
+            #print(t.result_pdbqt)
             rec_name = t.receptor_name
             replica_id = t.replica
             rec_res = all_results[all_results["receptor_id"]==rec_name]
@@ -448,6 +457,11 @@ class DINCDockThreadVina(DINCDockThread):
         all_conformations = []
         n_thr = len(dinc_job_threads)
         for i, t in enumerate(dinc_job_threads):
+            #print(t.frag_index)
+            #print(t.conformations)
+            #print(r.replica)
+            #print(t.receptor_name)
+            #print(t.results_pdbqt)
             frag_idx = t.frag_index
             results_file = t.output_dir / Path("results_frag_{}_rep{}.csv".format(frag_idx, t.replica)) # type: ignore
             # results file will have
@@ -509,10 +523,10 @@ class DINCDockThreadVina(DINCDockThread):
             next_iter_threads.append(new_thread)
         return next_iter_threads
 
-    def join(self):
-        threading.Thread.join(self)
-        if self.exception:
-            raise self.exception
+    #def join(self):
+    #    super.join()
+    #    if self.exception:
+    #        raise self.exception
 
 
 

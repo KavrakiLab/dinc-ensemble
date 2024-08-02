@@ -9,7 +9,7 @@ from typing import Optional
 class DINC_FRAGMENT_MODE(str, Enum):
     AUTO = "AUTO"
     MANUAL = "MANUAL"
-DEFAULT_DINC_FRAGMENT_MODE = DINC_FRAGMENT_MODE.AUTO
+DEFAULT_DINC_FRAGMENT_MODE = DINC_FRAGMENT_MODE.MANUAL
 
 # Total number of active degrees-of-freedom (i.e., torsion angles) in a fragment.
 DEFAULT_DINC_FRAG_SIZE: int = 4
