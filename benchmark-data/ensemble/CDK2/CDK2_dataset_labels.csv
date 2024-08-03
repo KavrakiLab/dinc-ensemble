@@ -1,0 +1,11 @@
+﻿pdb_code,ligand_name,cyclin_bound,inhibitor_label,DFG_label,A_loop_label,activity_label,CDK_label
+5A14,LQ5,no,type II,out,out-out,inactive,CDK2_human
+4KD1,dinaciclib,no,type I,in,out-out,inactive,CDK2_human
+5L2W,dinaciclib,yes,type I,in,in-in,inactive,CDK2_human
+3PJ8,roscovitine,no,type I,in,out-out,inactive,CDK2_human
+3DDQ,roscovitine,yes,type I,in,in-in,inactive,CDK2_human
+6GUH,AZ5438,no,type I,in,none-out,inactive,CDK2_human
+6GUE,AZ5438,yes,type I,in,in-in,inactive,CDK2_human
+6GUK,CGP74514A,no,type I,in,out-out,inactive,CDK2_human
+6GUF,CGP74514A,yes,type I,in,in-in,inactive,CDK2_human
+6GUB,flavopiridol,yes,type I,in,out-out,inactive,CDK2_human
