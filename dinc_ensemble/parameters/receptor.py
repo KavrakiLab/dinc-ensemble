@@ -24,7 +24,7 @@ class BBOX_DIM_TYPE(str, Enum):
 DEFAULT_BBOX_DIM_TYPE = BBOX_DIM_TYPE.LIG
 
 # Box padding (if box dimensions are ligc user defined, A)
-DEFAULT_BBOX_PADDING:float = 0
+DEFAULT_BBOX_PADDING:float = 5
 
 # Box dimentsions (if user defined, A)
 DEFAULT_BBOX_DIM_X:float = 0

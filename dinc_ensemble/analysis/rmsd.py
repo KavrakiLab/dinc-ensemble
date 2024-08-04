@@ -5,7 +5,7 @@ from numpy import array, sqrt, sum
 #   params: parameters of the docking job
 #   dir_path: directory where the docking job is running
 #
-def calculate_rmsd(conf, ref_mol, dir_path):
+def calculate_rmsd(conf, ref_mol):
     ## non symmetry-corrected rmsd
     # find automorphism involving non-H atoms
     A1 = []

@@ -209,6 +209,9 @@ def dihedral(x1, x2, x3, x4):
 def freeze_molkit_bonds(prev_frag, new_frag, frag_size, frag_new):
     previous_bonds = [(b.atom1, b.atom2) for b in prev_frag.allAtoms.bonds[0] if b.possibleTors]
     allBonds = [b for b in new_frag.allAtoms.bonds[0] if b.possibleTors]
+    # activate all previous bonds in case they were frozen
+    for b in allBonds:
+        b.activeTors = True
     for _ in range(frag_size - (len(allBonds) - len(previous_bonds))):
         previous_bonds.pop(random.randrange(len(previous_bonds)))
     for b in previous_bonds:
@@ -343,7 +346,8 @@ def expand_conf_to_fragment(conf, new_frag, prev_frag,
     previous_bonds = [(b.atom1, b.atom2) for b in prev_frag.allAtoms.bonds[0] if b.possibleTors]
     allBonds = [b for b in new_frag.allAtoms.bonds[0] if b.possibleTors]
     for _ in range(frag_size - (len(allBonds) - len(previous_bonds))):
-        previous_bonds.pop(random.randrange(len(previous_bonds)))
+        if len(previous_bonds) > 0:
+            previous_bonds.pop(random.randrange(len(previous_bonds)))
     for b in previous_bonds:
         bond_atoms = set([b[0].name, b[1].name])
         next(b for b in allBonds if set([b.atom1.name, b.atom2.name]) == bond_atoms).activeTors = False

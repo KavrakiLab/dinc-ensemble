@@ -22,6 +22,12 @@ def init_all_dince_params(**kwargs):
         DINC_CORE_PARAMS.output_dir = str(kwargs["output_dir"])
     if "n_out" in kwargs:
         DINC_CORE_PARAMS.n_out = kwargs["n_out"]
+    if "continue" in kwargs:
+        DINC_CORE_PARAMS.continue_run = kwargs["continue"]
+    if "cpu_count" in kwargs:
+        DINC_CORE_PARAMS.cpu_count = int(kwargs["cpu_count"])
+    if "verbose" in kwargs:
+        DINC_CORE_PARAMS.verbose = kwargs["verbose"]
 
         
     if "bbox_center_type" in kwargs:
@@ -44,23 +50,23 @@ def init_all_dince_params(**kwargs):
         DINC_RECEPTOR_PARAMS.align_receptors = kwargs["align_receptors"]
     if "ref_receptor" in kwargs:
         DINC_RECEPTOR_PARAMS.ref_receptor = kwargs["ref_receptor"]
-    if "score_f" in kwargs:
-        
-        VINA_ENGINE_PARAMS.score_f = kwargs["score_f"]
-    if "exhaustive" in kwargs:
-        VINA_ENGINE_PARAMS.exhaustive = kwargs["exhaustive"]
-    if "n_poses" in kwargs:
-        VINA_ENGINE_PARAMS.n_poses = kwargs["n_poses"]
-    if "cpu_count" in kwargs:
-        VINA_ENGINE_PARAMS.cpu_count = kwargs["cpu_count"]
-    if "seed" in kwargs:
-        VINA_ENGINE_PARAMS.seed = kwargs["seed"]
-    if "min_rmsd" in kwargs:
-        VINA_ENGINE_PARAMS.min_rmsd = kwargs["min_rmsd"]
-    if "max_evals" in kwargs:
-        VINA_ENGINE_PARAMS.max_evals = kwargs["max_evals"]
-    if "rand_steps" in kwargs:
-        VINA_ENGINE_PARAMS.rand_steps = kwargs["rand_steps"]
+
+    if "vina_score_f" in kwargs:
+        VINA_ENGINE_PARAMS.score_f = kwargs["vina_score_f"]
+    if "vina_exhaustive" in kwargs:
+        VINA_ENGINE_PARAMS.exhaustive = kwargs["vina_exhaustive"]
+    if "vina_n_poses" in kwargs:
+        VINA_ENGINE_PARAMS.n_poses = kwargs["vina_n_poses"]
+    if "vina_cpu_count" in kwargs:
+        VINA_ENGINE_PARAMS.cpu_count = kwargs["vina_cpu_count"]
+    if "vina_seed" in kwargs:
+        VINA_ENGINE_PARAMS.seed = kwargs["vina_seed"]
+    if "vina_min_rmsd" in kwargs:
+        VINA_ENGINE_PARAMS.min_rmsd = kwargs["vina_min_rmsd"]
+    if "vina_max_evals" in kwargs:
+        VINA_ENGINE_PARAMS.max_evals = kwargs["vina_max_evals"]
+    if "vina_rand_steps" in kwargs:
+        VINA_ENGINE_PARAMS.rand_steps = kwargs["vina_rand_steps"]
 
     if "frag_mode" in kwargs:
         DINC_FRAG_PARAMS.frag_mode = kwargs["frag_mode"]

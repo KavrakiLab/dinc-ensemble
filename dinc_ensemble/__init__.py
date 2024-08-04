@@ -8,7 +8,7 @@ from .ligand.core.bond import Bond
 from .parameters import DINC_CORE_PARAMS, \
                         DINC_ANALYSIS_PARAMS, \
                         DINC_FRAG_PARAMS, \
-                        DINC_RECEPTOR_PARAMS
+                        DINC_RECEPTOR_PARAMS, \
+                        VINA_ENGINE_PARAMS
 
-from .docking.dinc_init import init_dinc_ensemble_threads
 from .docking.dinc_run import dinc_full_run

@@ -1,0 +1,3 @@
+from .results_txt_template import TEMPLATE_RES_CROSSDOCK
+from .results_txt_template import TEMPLATE_RES_REDOCK
+from .results_txt_template import TEMPLATE_NO_RES

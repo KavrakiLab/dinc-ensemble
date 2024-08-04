@@ -149,6 +149,7 @@ def dock(
             It overrides other parameters provided in CLI command. "
     ),
 
+    # CORE OPTIONS
     job_type: DINC_JOB_TYPE = typer.Option(
         default=DEFAULT_DINC_JOB_TYPE,
         help=core_docstrings["job_type"]
@@ -168,6 +169,18 @@ def dock(
     n_out: int = typer.Option(
         default=DEFAULT_N_OUT,
         help=core_docstrings["n_out"]
+    ),    
+    cpu_count: str = typer.Option(
+        default = DEFAULT_CPU_CNT,
+        help = core_docstrings["cpu_count"]
+    ),
+    countinue_run: str = typer.Option(
+        default = DEFAULT_CONTINUE,
+        help = core_docstrings["continue"]
+    ),
+    verbose: str = typer.Option(
+        default = DEFAULT_CONTINUE,
+        help = core_docstrings["verbose"]
     ),
     # RECEPTOR OPTIONS
     bbox_center_type: BBOX_CENTER_TYPE = typer.Option(
@@ -211,38 +224,39 @@ def dock(
         help=bbox_docstrings["ref_receptor"]
         ),
     # VINA ENGINE OPTIONS
-    score_f: SCORE_F = typer.Option(
+    vina_score_f: SCORE_F = typer.Option(
         default=DEFAULT_SCORE_F,
         help=vina_docstrings["score_f"]
         ),
-    exhaustive: int = typer.Option(
+    vina_exhaustive: int = typer.Option(
         default=DEFAULT_VINA_EXHAUSTIVE,
         help=vina_docstrings["exhaustive"]
         ),
-    n_poses: int = typer.Option(
+    vina_n_poses: int = typer.Option(
         default=DEFAULT_VINA_N_POSES,
         help=vina_docstrings["n_poses"]
         ),
-    cpu_count: int = typer.Option(
+    vina_cpu_count: int = typer.Option(
         default=DEFAULT_VINA_CPU_CNT,
         help=vina_docstrings["cpu_count"]
         ),
-    seed: int = typer.Option(
+    vina_seed: int = typer.Option(
         default=DEFAULT_VINA_SEED,
         help=vina_docstrings["seed"]
         ),
-    min_rmsd: float = typer.Option(
+    vina_min_rmsd: float = typer.Option(
         default=DEFAULT_VINA_MIN_RMSD,
         help=vina_docstrings["min_rmsd"]
         ),
-    max_evals: int = typer.Option(
+    vina_max_evals: int = typer.Option(
         default=DEFAULT_VINA_MAX_EVALS,
         help=vina_docstrings["max_evals"]
         ),
-    rand_steps: int = typer.Option(
+    vina_rand_steps: int = typer.Option(
         default=DEFAULT_RAND_STEPS,
         help=vina_docstrings["rand_steps"]
         ),
+    # FRAGMENT OPTIONS
     frag_mode: DINC_FRAGMENT_MODE  = typer.Option(
         default = DEFAULT_DINC_FRAGMENT_MODE,
         help = fragment_docstrings["frag_mode"]),
@@ -258,7 +272,7 @@ def dock(
     root_auto: DINC_ROOT_AUTO = typer.Option(
         default = DEFAULT_DINC_ROOT_AUTO,
         help = fragment_docstrings["root_auto"]),
-    root_name: str = typer.Option(
+    root_name: DINC_ROOT_AUTO = typer.Option(
         default = None,
         help = fragment_docstrings["root_name"])
     ):
@@ -270,6 +284,10 @@ def dock(
         "dock_engine" :dock_engine,
         "replica_num" :replica_num,
         "n_out" :n_out,
+        "continue": countinue_run,
+        "cpu_count": cpu_count,
+        "verbose": verbose,
+
         "bbox_center_type" :bbox_center_type,
         "bbox_center_x" :bbox_center_x,
         "bbox_center_y" :bbox_center_y,
@@ -280,14 +298,16 @@ def dock(
         "bbox_dim_z" :bbox_dim_z,
         "align_receptors" :align_receptors,
         "ref_receptor" :ref_receptor,
-        "score_f" :score_f,
-        "exhaustive" :exhaustive,
-        "n_poses" :n_poses,
-        "cpu_count" :cpu_count,
-        "seed" :seed,
-        "min_rmsd" :min_rmsd,
-        "max_evals" :max_evals,
-        "rand_steps" :rand_steps,
+
+        "vina_score_f" :vina_score_f,
+        "vina_exhaustive" :vina_exhaustive,
+        "vina_n_poses" :vina_n_poses,
+        "vina_cpu_count" :vina_cpu_count,
+        "vina_seed" :vina_seed,
+        "vina_min_rmsd" :vina_min_rmsd,
+        "vina_max_evals" :vina_max_evals,
+        "vina_rand_steps" :vina_rand_steps,
+
         "frag_mode" :frag_mode,
         "frag_size" :frag_size,
         "frag_new" :frag_new,
@@ -310,6 +330,10 @@ def dock(
                         parameters_kwars["align_receptors"] = True
                     else:
                         parameters_kwars["align_receptors"] = False
+                    if parameters_kwars["continue"].lower() in ['true', '1', 't', 'y', 'yes']:
+                        parameters_kwars["continue"] = True
+                    else:
+                        parameters_kwars["continue"] = False
                     
                 init_all_dince_params(**parameters_kwars)
 

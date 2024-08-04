@@ -36,13 +36,25 @@ DEFAULT_OUTPUT_DIR:str = "."
 # Number of output ligands (default: 5)
 DEFAULT_N_OUT:int = 5
 
+# Continue the docking run from the existing files (default: True)
+DEFAULT_CONTINUE:bool = True 
+
+# Number of CPUs used (default: 0 - all available)
+DEFAULT_CPU_CNT:int = 0 
+
+# Verbosity (default: 1 - info)
+DEFAULT_VERBOSE:int = 1 
+
 @dataclass
 @docstring_parameter(DEFAULT_DINC_JOB_TYPE,
                      DEFAULT_DINC_DOCK_TYPE,
                      DEFAULT_DOCK_ENGINE, 
                      DEFAULT_DINC_NUM_REPLICAS,
                      DEFAULT_OUTPUT_DIR,
-                     DEFAULT_N_OUT)
+                     DEFAULT_N_OUT,
+                     DEFAULT_CONTINUE,
+                     DEFAULT_CPU_CNT,
+                     DEFAULT_VERBOSE)
 class DincCoreParams(ParameterDataclasses):
     """
     Core parameters for DINC-Ensemble.
@@ -67,6 +79,15 @@ class DincCoreParams(ParameterDataclasses):
     n_out : int
         Number of output ligand files.
         Defaults to {5}
+    continue : bool
+        Continue the docking run from the existing files.
+        Defaults to {6}
+    cpu_count : int
+        Number of CPUs used by the whole program
+        Defaults to {7}
+    verbose : int
+        Verbosity - 0 (no output), 1 (into), 2 (debug)
+        Defaults to {8}
     """
   
     # core parameters
@@ -76,3 +97,6 @@ class DincCoreParams(ParameterDataclasses):
     dock_type: DINC_DOCK_TYPE = DEFAULT_DINC_DOCK_TYPE
     output_dir: str = DEFAULT_OUTPUT_DIR
     n_out: str = DEFAULT_N_OUT
+    continue_run: bool = DEFAULT_CONTINUE
+    cpu_count: int = DEFAULT_CPU_CNT
+    verbose: int = DEFAULT_VERBOSE
