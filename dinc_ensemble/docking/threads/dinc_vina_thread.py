@@ -298,17 +298,15 @@ class DINCDockThreadVina(DINCDockThread):
             all_results = pd.concat([all_results, res])
             all_conformations.extend(t.conformations)
 
-        if all_conformations > 0:
-            #cluster conformations add that info
-            cluster_conformations(all_conformations)
-            all_results["clust_energy_rank"] = all_results.apply(lambda x:
-                                                dinc_job_threads[int(x["thread_id"])].conformations[int(x["model_id"])].clust_nrg_rank
-                                                , axis=1)
-            all_results["clust_size_rank"] = all_results.apply(lambda x:
-                                                dinc_job_threads[int(x["thread_id"])].conformations[int(x["model_id"])].clust_size_rank
-                                                , axis=1)
-            all_results = all_results.sort_values(by = ["energies", "clust_size_rank", "clust_energy_rank"]).reset_index(drop=True)
-            top_results = all_results.groupby(["replica_id"]).head(10).reset_index()
+        cluster_conformations(all_conformations)
+        all_results["clust_energy_rank"] = all_results.apply(lambda x:
+                                            dinc_job_threads[int(x["thread_id"])].conformations[int(x["model_id"])].clust_nrg_rank
+                                            , axis=1)
+        all_results["clust_size_rank"] = all_results.apply(lambda x:
+                                            dinc_job_threads[int(x["thread_id"])].conformations[int(x["model_id"])].clust_size_rank
+                                            , axis=1)
+        all_results = all_results.sort_values(by = ["energies", "clust_size_rank", "clust_energy_rank"]).reset_index(drop=True)
+        top_results = all_results.groupby(["replica_id"]).head(10).reset_index()
         
         intermediate_result = t.output_dir / Path("results_frag_{}_collection.csv".format(frag_idx))
         all_results.to_csv(intermediate_result)
