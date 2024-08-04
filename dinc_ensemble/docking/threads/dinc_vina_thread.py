@@ -25,6 +25,7 @@ class DINCDockThreadVina(DINCDockThread):
     def __init__(self, 
                  dinc_thread_elem: DINCThreadElem,
                  vina_engine_params: VinaEngineParams,
+                 sema,
                  bbox_center = None,
                  bbox_dims = None,
                  leaf_multi = False,
@@ -34,6 +35,7 @@ class DINCDockThreadVina(DINCDockThread):
         
         self.output_dir = self.thread_elem.job_info.job_root
         self.params = vina_engine_params
+        self.sema = sema
         self.vina = self.prepare_vina_object()
         if self.fragment is None or self.frag_index < len(self.fragment.fragments):
             results_outfile = self.output_dir / Path("results_frag_{}_rep{}.csv".format(self.frag_index, self.replica)) # type: ignore
@@ -264,10 +266,12 @@ class DINCDockThreadVina(DINCDockThread):
         # note that the job ended
         job_name = self.thread_elem.job_info.job_name
         replica = self.thread_elem.data.replica
+        self.sema.release()
 
             
     @classmethod
-    def next_step(cls, dinc_job_threads: List, fragment_idx):
+    def next_step(cls, dinc_job_threads: List, 
+                  fragment_idx, sema):
         # step between ligand increments in incremental jobs
         # 1 - get all recults data
         all_results = pd.DataFrame({"energies": [],
@@ -343,6 +347,7 @@ class DINCDockThreadVina(DINCDockThread):
                 t.thread_elem.data.iterative_step += 1
                 new_thread = DINCDockThreadVina(t.thread_elem, 
                                                 t.params,
+                                                sema,
                                                 frag_index=frag_idx,
                                                 bbox_dims=bbox_d,
                                                 bbox_center=bbox_c)
