@@ -8,6 +8,7 @@ import time
 from dinc_ensemble.parameters import *
 from dinc_ensemble import write_ligand
 from dinc_ensemble.ligand import DINCMolecule
+from multiprocessing import cpu_count, Semaphore
 from pathlib import Path
 from .utils.utils_process_output import cluster_conformations
 
@@ -45,7 +46,10 @@ def dinc_full_run(ligand_file: str,
     progress_file = root_dir / Path("progress.csv")
     progress_df = pd.read_csv(progress_file)
     
-
+    # for total number of cpus, for now use all!
+    max_cpu_cnt = cpu_count()
+    sema = Semaphore(max_cpu_cnt)
+    
     if DINC_CORE_PARAMS.dock_type == DINC_DOCK_TYPE.INCREMENTAL:
         
         frag_cnt = 0
@@ -60,7 +64,8 @@ def dinc_full_run(ligand_file: str,
             replica = elem.data.replica
             fragment = elem.data.iterative_step
             dinc_thread = DINCDockThreadVina(elem, 
-                                                VINA_ENGINE_PARAMS)
+                                            VINA_ENGINE_PARAMS, 
+                                            sema)
             dinc_frag_threads.append(dinc_thread)
             if job_name not in dinc_frag_threads_per_job:
                 dinc_frag_threads_per_job[job_name] = []
@@ -75,13 +80,16 @@ def dinc_full_run(ligand_file: str,
                 logger.info("-------------------------------------")
                 # for all receptor threads (replicas)
                 for t in current_job_threads:
+                    sema.acquire()
                     t.start()
                 # wait for one iterative round per job
                 for t in current_job_threads:
                     t.join()
                 dinc_frag_threads_per_job[job] = current_job_threads
                 #if frag_idx < frag_cnt - 1:
-                current_job_threads = DINCDockThreadVina.next_step(current_job_threads, frag_idx)
+                current_job_threads = DINCDockThreadVina.next_step(current_job_threads, 
+                                                                   frag_idx,
+                                                                   sema)
                 #else:
                 # final step - maybe not needed?
                 # x = 0
@@ -176,8 +184,9 @@ def dinc_full_run(ligand_file: str,
             logger.info("-------------------------------------")
             logger.info("DINC-Ensemble: Thread for - Job #{}; Replica {}; Fragment{};".format(job_name, replica, fragment))
             logger.info("-------------------------------------")
-            dinc_thread = DINCDockThreadVina(elem, VINA_ENGINE_PARAMS)
+            dinc_thread = DINCDockThreadVina(elem, VINA_ENGINE_PARAMS, sema)
             dinc_job_threads.append(dinc_thread)
+            sema.acquire()
             dinc_thread.start()
 
         # wait for all jobs to finish
