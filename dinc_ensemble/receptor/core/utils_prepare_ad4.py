@@ -115,17 +115,17 @@ def prepare_receptor_ad4(
     alt_loc_ats = mol.allAtoms.get(lambda x: "@" in x.name)
     len_alt_loc_ats = len(alt_loc_ats)
     if len_alt_loc_ats:
-        logger.warning("WARNING!", mol.name, "has",len_alt_loc_ats, ' alternate location atoms!\nUse prepare_pdb_split_alt_confs.py to create pdb files containing a single conformation.\n')
+        logger.warning("WARNING!" + mol.name + "has" + str(len_alt_loc_ats) + ' alternate location atoms!\nUse prepare_pdb_split_alt_confs.py to create pdb files containing a single conformation.\n')
 
     mode = "automatic"
     outputfilename =""
     inmem = True
 
-    logger.info("setting up RPO with mode=", mode)
-    logger.info("and outputfilename= ", outputfilename)
-    logger.info("charges_to_add=", charges_to_add)
-    logger.info("inmem=", inmem)
-    logger.info("delete_single_nonstd_residues=", delete_single_nonstd_residues)
+    logger.info("setting up RPO with mode= {}".format(mode))
+    logger.info("and outputfilename= {}".format(outputfilename))
+    logger.info("charges_to_add= {}".format(charges_to_add))
+    logger.info("inmem= {}".format(inmem))
+    logger.info("delete_single_nonstd_residues= {}".format(delete_single_nonstd_residues))
 
     RPO = AD4ReceptorPreparation(mol, mode, repairs, charges_to_add, 
                         cleanup, outputfilename=outputfilename,
