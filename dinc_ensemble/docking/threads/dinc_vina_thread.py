@@ -191,7 +191,7 @@ class DINCDockThreadVina(DINCDockThread):
     def write_results_load_conf(self, update_fragment=True, write=True):
         #1 - write poses
         if write:
-            if self.vina.poses() > 0:
+            if len(self.vina.poses(coordinates_only=True)) > 0:
                 self.vina.write_poses(str(self.results_pdbqt), 
                                 n_poses=self.params.n_poses,
                                 overwrite=True)
