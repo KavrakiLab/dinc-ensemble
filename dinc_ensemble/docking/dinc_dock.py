@@ -36,7 +36,7 @@ def dinc_run_single_vina(ligand_path_pdbqt: str,
         print(rand_fname)
         #if not Path(rand_fname).exists():
         os.system("vina --ligand {lig} --receptor {rec} \
-            --randomize_only --out {out_file} --config {box} --verbose 0".format(
+            --randomize_only --out {out_file} --config {box} --verbosity 0".format(
             lig=ligand_path_pdbqt,
             rec=receptor_path,
             out_file=rand_fname,
@@ -50,7 +50,7 @@ def dinc_run_single_vina(ligand_path_pdbqt: str,
                 --num_modes {n_poses} --out {out} \
                 --max_evals {max_e} --min_rmsd {min_r} \
                 --seed {seed} \
-                --cpu {cpu} --verbose 0".format(lig=ligand_path_pdbqt,
+                --cpu {cpu} --verbosity 0".format(lig=ligand_path_pdbqt,
                                     rec=receptor_path,
                                     box=box_path,
                                     ex=exhaustiveness,
