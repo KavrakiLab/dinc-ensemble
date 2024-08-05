@@ -174,7 +174,7 @@ def dock(
         default = DEFAULT_CPU_CNT,
         help = core_docstrings["cpu_count"]
     ),
-    countinue_run: str = typer.Option(
+    continue_run: bool = typer.Option(
         default = DEFAULT_CONTINUE,
         help = core_docstrings["continue"]
     ),
@@ -284,7 +284,7 @@ def dock(
         "dock_engine" :dock_engine,
         "replica_num" :replica_num,
         "n_out" :n_out,
-        "continue": countinue_run,
+        "continue": continue_run,
         "cpu_count": cpu_count,
         "verbose": verbose,
 
