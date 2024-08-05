@@ -15,8 +15,6 @@ from .utils.utils_process_output import extract_vina_conformations
 from .utils.utils_loggers import init_logging
 from ..analysis.rmsd import calculate_rmsd 
 
-from pandarallel import pandarallel
-
 import os
 from copy import deepcopy
 import logging
