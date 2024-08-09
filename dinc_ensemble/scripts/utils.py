@@ -63,6 +63,8 @@ def init_all_dince_params(**kwargs):
         VINA_ENGINE_PARAMS.seed = kwargs["vina_seed"]
     if "vina_min_rmsd" in kwargs:
         VINA_ENGINE_PARAMS.min_rmsd = kwargs["vina_min_rmsd"]
+    if "vina_energy_range" in kwargs:
+        VINA_ENGINE_PARAMS.energy_range = kwargs["vina_energy_range"]
     if "vina_max_evals" in kwargs:
         VINA_ENGINE_PARAMS.max_evals = kwargs["vina_max_evals"]
     if "vina_rand_steps" in kwargs:

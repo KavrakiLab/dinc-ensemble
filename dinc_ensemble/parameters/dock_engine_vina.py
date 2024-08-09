@@ -12,19 +12,22 @@ class SCORE_F(str, Enum):
 DEFAULT_SCORE_F = SCORE_F.VINA
 
 # Vina exhaustiveness parameter
-DEFAULT_VINA_EXHAUSTIVE: int = 8
+DEFAULT_VINA_EXHAUSTIVE: int = 4
 
 # Number of outputs to produce in each round
-DEFAULT_VINA_N_POSES: int = 100
+DEFAULT_VINA_N_POSES: int = 25
 
 # Number of cpus to use by vina (0 - all)
-DEFAULT_VINA_CPU_CNT: int = 4
+DEFAULT_VINA_CPU_CNT: int = 1
 
 # Vina seed
 DEFAULT_VINA_SEED: int = 0
 
 # Minimum RMSD difference between poses 
 DEFAULT_VINA_MIN_RMSD: float = 1
+
+# Maximum energy difference between the best binding mode and the worst one displayed (kcal/mol)
+DEFAULT_VINA_ENERGY_RANGE: float = 3
 
 # Maximum number of evaluation (0 - heuristics)
 DEFAULT_VINA_MAX_EVALS: int = 0
@@ -66,12 +69,15 @@ class VinaEngineParams(ParameterDataclasses):
     min_rmsd: float
         Minimum rmsd difference between poses for Vina
         Defaults to {5}
+    energy_range: float
+        Maximum energy difference between the best binding mode and the worst one displayed
+        Defaults to {6}
     max_evals: int
         Maximum number of Vina evaluations (0 - heuristics)
-        Defaults to {6}
+        Defaults to {7}
     rand_steps: int
         Number of randomized steps for Vina randomization
-        Defaults to {7}
+        Defaults to {8}
    '''
    
     score_f: SCORE_F = DEFAULT_SCORE_F
@@ -80,5 +86,6 @@ class VinaEngineParams(ParameterDataclasses):
     cpu_count: int = DEFAULT_VINA_CPU_CNT
     seed: int = DEFAULT_VINA_SEED
     min_rmsd: float = DEFAULT_VINA_MIN_RMSD
+    energy_range: float = DEFAULT_VINA_ENERGY_RANGE
     max_evals: int = DEFAULT_VINA_MAX_EVALS
     rand_steps: int = DEFAULT_RAND_STEPS

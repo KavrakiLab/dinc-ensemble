@@ -16,6 +16,7 @@ def dinc_run_single_vina(ligand_path_pdbqt: str,
                         n_poses: int = VINA_ENGINE_PARAMS.n_poses,
                         max_evals: int = VINA_ENGINE_PARAMS.max_evals,
                         min_rmsd: int = VINA_ENGINE_PARAMS.min_rmsd, 
+                        energy_range: int = VINA_ENGINE_PARAMS.energy_range,
                         seed: int = VINA_ENGINE_PARAMS.seed,
                         continue_run: bool = DINC_CORE_PARAMS.continue_run,
                         cpu_count: int = VINA_ENGINE_PARAMS.cpu_count):
@@ -49,13 +50,14 @@ def dinc_run_single_vina(ligand_path_pdbqt: str,
                 --exhaustiveness={ex} --config {box} \
                 --num_modes {n_poses} --out {out} \
                 --max_evals {max_e} --min_rmsd {min_r} \
-                --seed {seed} \
+                --energy_range {nrg_rng} --seed {seed} \
                 --cpu {cpu} --verbosity 0".format(lig=ligand_path_pdbqt,
                                     rec=receptor_path,
                                     box=box_path,
                                     ex=exhaustiveness,
                                     max_e=max_evals,
                                     min_r=min_rmsd,
+                                    nrg_rng=energy_range,
                                     seed=seed,
                                     out=output_file,
                                     n_poses=n_poses,

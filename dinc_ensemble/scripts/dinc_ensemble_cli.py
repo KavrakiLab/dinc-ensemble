@@ -248,6 +248,10 @@ def dock(
         default=DEFAULT_VINA_MIN_RMSD,
         help=vina_docstrings["min_rmsd"]
         ),
+    vina_energy_range: float = typer.Option(
+        default=DEFAULT_VINA_ENERGY_RANGE,
+        help=vina_docstrings["energy_range"]
+        ),
     vina_max_evals: int = typer.Option(
         default=DEFAULT_VINA_MAX_EVALS,
         help=vina_docstrings["max_evals"]
@@ -305,6 +309,7 @@ def dock(
         "vina_cpu_count" :vina_cpu_count,
         "vina_seed" :vina_seed,
         "vina_min_rmsd" :vina_min_rmsd,
+        "vina_energy_range" :vina_energy_range,
         "vina_max_evals" :vina_max_evals,
         "vina_rand_steps" :vina_rand_steps,
 

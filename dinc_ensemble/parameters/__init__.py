@@ -8,5 +8,4 @@ DINC_CORE_PARAMS: DincCoreParams = DincCoreParams()
 DINC_RECEPTOR_PARAMS: DincReceptorParams = DincReceptorParams()
 DINC_ANALYSIS_PARAMS: DincAnalysisParams = DincAnalysisParams()
 DINC_FRAG_PARAMS: DincFragParams = DincFragParams()
-
 VINA_ENGINE_PARAMS: VinaEngineParams = VinaEngineParams()
