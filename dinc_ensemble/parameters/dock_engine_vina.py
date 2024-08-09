@@ -43,6 +43,7 @@ DEFAULT_RAND_STEPS: int = 1000
                     DEFAULT_VINA_CPU_CNT,\
                     DEFAULT_VINA_SEED,\
                     DEFAULT_VINA_MIN_RMSD,\
+                    DEFAULT_VINA_ENERGY_RANGE,\
                     DEFAULT_VINA_MAX_EVALS,\
                     DEFAULT_RAND_STEPS)
 class VinaEngineParams(ParameterDataclasses):
