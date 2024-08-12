@@ -27,7 +27,7 @@ DEFAULT_VINA_SEED: int = 0
 DEFAULT_VINA_MIN_RMSD: float = 1
 
 # Maximum energy difference between the best binding mode and the worst one displayed (kcal/mol)
-DEFAULT_VINA_ENERGY_RANGE: float = 3
+DEFAULT_VINA_ENERGY_RANGE: float = 10
 
 # Maximum number of evaluation (0 - heuristics)
 DEFAULT_VINA_MAX_EVALS: int = 0
