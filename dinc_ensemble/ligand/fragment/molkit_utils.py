@@ -16,8 +16,12 @@ from AutoDockTools.MoleculePreparation import AD4LigandWriter, AD4FlexibleRecept
 from copy import deepcopy
 from numpy import absolute, arctan2, array, cross, degrees, dot, linspace, matrix
 from numpy.linalg import norm
+from pathlib import Path
 
 from dinc_ensemble.parameters.fragment import *
+from dinc_ensemble.docking.dinc_dock_engine import dinc_probe_vina
+from dinc_ensemble.parameters.receptor import DincReceptorParams
+from dinc_ensemble.docking.utils.utils_prep_receptor import prepare_bbox
 
 import random
 
@@ -369,7 +373,11 @@ def select_root_atom(lgd,
                      root_type,
                      root_name,
                      root_auto,
-                     frag_size):
+                     frag_size,
+                     # following arguments needed just for probe option
+                     probe_dir = "tmp_probe",
+                     dince_frag = None,
+                     dince_rec = None):
     heavy_atoms = lgd.allAtoms.get(lambda a: a.element != 'H')
 
     # user mode: the root atom is specified by the user
@@ -424,6 +432,31 @@ def select_root_atom(lgd,
                     max_bonds = len(H_bonds)
                     root_name = atom.name
 
+        elif root_auto == DINC_ROOT_AUTO.PROBE:
+            # 1 - a random fragmentation
+            dince_frag._root_atom_name = dince_frag._molecule.molkit_molecule.allAtoms[0].name
+            dince_frag.split_to_fragments()
+            # 2 - extract leaves
+            dince_frag.split_leafs(leaf_size=frag_size)
+            probe_dir = Path(probe_dir)
+            probe_dir.mkdir(exist_ok=True, parents=True)
+            probe_res = dince_frag.write_pdbqt_frags(str(probe_dir), leaf=True)
+            probe_pdbqts = " ".join([str(i) for i in probe_res["leaf_pdbqt_file"]])
+            rec_fname = probe_dir / "rec.pdbqt"
+            with open(rec_fname, "w") as rec_f:
+                rec_f.write(dince_rec.pdbqt_str)
+            bbox_fname = probe_dir / "bbox.txt"
+            full_lig_fname = "_".join(str(probe_res["leaf_pdbqt_file"][0]).split("_")[:-2])+"_full.pdbqt"
+            prepare_bbox(full_lig_fname, 
+                            [str(rec_fname)], 
+                            bbox_fname,
+                            DincReceptorParams())
+            probe_out_file = probe_dir / "probe_out.pdbqt"
+            # 3 - probe
+            res_df, leaf_idx = dinc_probe_vina(probe_pdbqts, str(rec_fname), 
+                str(probe_out_file), str(bbox_fname),
+                4,  20, 0, 10, 10, 0, 4)
+            root_name = dince_frag.leaf_frags[leaf_idx].allAtoms[0].name
         else:
             raise ValueError("DincError: Invalid automatic root selection protocol.")
     else:

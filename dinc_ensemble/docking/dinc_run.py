@@ -6,7 +6,7 @@ from dinc_ensemble.ligand import DINCMolecule
 import multiprocessing as mp
 from pathlib import Path
 
-from .dinc_dock import dinc_run_single_vina
+from .dinc_dock_engine import dinc_run_single_vina
 from .utils import TEMPLATE_RES_CROSSDOCK, TEMPLATE_RES_REDOCK, TEMPLATE_NO_RES
 from .utils.utils_process_output import cluster_conformations
 from ..parameters import DINC_CORE_PARAMS, DINC_JOB_TYPE, VINA_ENGINE_PARAMS
@@ -38,7 +38,8 @@ def dinc_full_run(ligand_file: str,
     # 1 - initialize receptors (align and binding box)
     # 2 - initialize ligands (load to DINCMolecule)
     # 3 - initialize fragments (load to DINCFragment - used for expanding conformations inbetweek runs)
-    dinc_run_info, ligand, fragment, frag_files, receptors = dinc_prepare_inputs(ligand_file, receptor_files)
+    dinc_run_info, ligand, fragment, frag_files, \
+        receptors, leaf_files = dinc_prepare_inputs(ligand_file, receptor_files)
     # some useful directories here
     root_dir = dinc_run_info.root
     

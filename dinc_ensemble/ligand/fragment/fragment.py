@@ -29,6 +29,7 @@ import typing
 
 from ...parameters.fragment import *
 from ...parameters.core import *
+from ...receptor.core import DINCReceptor
 
 from .molkit_utils import *
 from .draw import draw_fragment, create_fragment_scene
@@ -46,7 +47,9 @@ class DINCFragment:
 
     def __init__(self, 
                 molecule:DINCMolecule,
-                frag_params: DincFragParams = DincFragParams()
+                frag_params: DincFragParams = DincFragParams(),
+                # needed for probing
+                ref_receptor: Optional[DINCReceptor] = None
                 ) -> None:
         
         '''
@@ -83,6 +86,7 @@ class DINCFragment:
         self._root_type = frag_params.root_type
         self._root_auto = frag_params.root_auto
         self._root_atom_name = frag_params.root_name
+        self._ref_receptor = ref_receptor
 
         if frag_params.root_name is not None:
             self._root_atom = self.get_molkit_atom(frag_params.root_name)
@@ -105,7 +109,9 @@ class DINCFragment:
                             self._root_type,
                             self._root_atom_name,
                             self._root_auto,
-                            self._frag_size)
+                            self._frag_size,
+                            probe_dir=self._molecule.molkit_molecule.name+"_probe",
+                            dince_frag=self, dince_rec=self._ref_receptor)
         self._root_atom = self.get_molkit_atom(self._root_atom_name)
         logger.info("Selected atom: {}".format(self._root_atom_name))
     
@@ -119,11 +125,13 @@ class DINCFragment:
         self.fragments_dincmol = [DINCMolecule(f, prepare=False) for f in self.fragments]
         logger.info("Split into: {} fragments".format(len(self.fragments)))
 
-    def split_leafs(self):
+    def split_leafs(self, leaf_size=1):
         logger.info("Splitting leaves")
         template_lig = self.fragments[-1]
-        # include root
-        leaf_nodes = [template_lig.torTree.rootNode]
+        # include root if it has just one child
+        leaf_nodes = []
+        if len(template_lig.torTree.rootNode.children) <= 1:
+            leaf_nodes.append(template_lig.torTree.rootNode)
         # find leaves
         for n in template_lig.torTree.torsionMap:
             if len(n.children) == 0:
@@ -134,7 +142,7 @@ class DINCFragment:
             ln_root_atom = template_lig.allAtoms[ln.atomList[0]]
             template_lig_copy = deepcopy(template_lig)
             splt_frgs = split_into_fragments(template_lig_copy, 
-                                             ln_root_atom.name, 2,10)
+                                             ln_root_atom.name, leaf_size,100)
             leaf_frags.append(splt_frgs[0])
         self.leaf_frags = leaf_frags
         self.leaf_frags_dincmol = [DINCMolecule(l, prepare=False) for l in leaf_frags]
@@ -301,10 +309,14 @@ class DINCFragment:
             #print(len(elem.allAtoms))
             elem_molkit_mol = elem
             suffix = ""
-            if i == len(frags)-1:
-                suffix = "_full"
+            if not leaf:
+                if i == len(frags)-1:
+                    suffix = "_full"
+                else:
+                    suffix = "_frag_{}".format(i)
             else:
-                suffix = "_frag_{}".format(i)
+                suffix = "_leaf_{}".format(i)
+                
 
             elem_path_pdbqt = p / (elem.name+"{}.pdbqt".format(suffix))
             # needed to initialize the pdbqt string
@@ -312,18 +324,35 @@ class DINCFragment:
             
             frag_pdbqt_file.append(elem_path_pdbqt)
             frag_id.append(i)
-        logger.debug("Fragments found:")
-        logger.debug(frag_pdbqt_file)
-        create_fragment_scene(frag_pdbqt_file[-1], frag_pdbqt_file, out_dir)
+        if not leaf:
+            logger.debug("Fragments found:")
+            logger.debug(frag_pdbqt_file)
+            create_fragment_scene(frag_pdbqt_file[-1], frag_pdbqt_file, out_dir)
+        else:
+            logger.debug("Leaves found:")
+            logger.debug(frag_pdbqt_file)
+            # write also the full_ligand
+            elem_path_pdbqt = p / (elem.name+"_full.pdbqt")
+            elem = self.fragments[-1]
+            # needed to initialize the pdbqt string
+            write_fragment_pdbqt(elem, elem_path_pdbqt)
+            create_fragment_scene(elem_path_pdbqt, frag_pdbqt_file, out_dir)
+            
+        id_lab = "frag_id"
+        pdbqt_lab = "frag_pdbqt_file"
+        if leaf:
+            id_lab = "leafid"
+            pdbqt_lab = "leaf_pdbqt_file"
+            
         data_df = pd.DataFrame(
             {
-                "frag_id": frag_id,
-                "frag_pdbqt_file": frag_pdbqt_file
+                id_lab: frag_id,
+                pdbqt_lab: frag_pdbqt_file
             }
         )
         ligand_name = self._molecule.molkit_molecule.name
         outfile = p / (ligand_name+"_pdbqt_info.csv")
-        data_df[["frag_id", "frag_pdbqt_file"]].to_csv(outfile)
+        data_df[[id_lab, pdbqt_lab]].to_csv(outfile)
         return data_df
 
     def get_molkit_atom(self, name: str):
