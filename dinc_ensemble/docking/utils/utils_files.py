@@ -4,7 +4,7 @@ from ... import load_ligand, load_receptor,\
                         DINC_FRAG_PARAMS
 from ...ligand import DINCFragment
 from ...parameters.core import DINC_DOCK_TYPE
-from ...parameters.fragment import DINC_FRAGMENT_MODE
+from ...parameters.fragment import DINC_FRAGMENT_MODE, DINC_ROOT_AUTO
 from dinc_ensemble import DINC_CORE_PARAMS, \
                           DINC_RECEPTOR_PARAMS, \
                           VINA_ENGINE_PARAMS
@@ -72,7 +72,7 @@ def dinc_prepare_inputs(ligand_file, receptor_files):
     logger.info("- Generate fragments")
     # if doing classic docking, all bonds are active
     frag_params = DINC_FRAG_PARAMS
-    print(frag_params)
+    #print(frag_params)
     if DINC_CORE_PARAMS.dock_type == DINC_DOCK_TYPE.CLASSIC:
         frag_params.frag_mode = DINC_FRAGMENT_MODE.MANUAL
         frag_params.frag_size = len(ligand.bonds)
@@ -80,6 +80,14 @@ def dinc_prepare_inputs(ligand_file, receptor_files):
     output_dir = str(dinc_run_info.ligand.parent)
     frag_out_df = fragment.write_pdbqt_frags(out_dir=output_dir)
     frag_files = list(frag_out_df["frag_pdbqt_file"])
+    # add also leaves in case of probing
+    leaf_files = []
+    if DINC_FRAG_PARAMS.root_auto == DINC_ROOT_AUTO.PROBE:
+        fragment.split_leafs()
+        leaf_out_df = fragment.write_pdbqt_frags(out_dir=output_dir,
+                                                 leaf=True)
+        leaf_files = list(leaf_out_df["leaf_pdbqt_file"])
+            
     
     # STEP 5 - load receptors
     # receptors loaded from: dinc_run_info.receptors
@@ -98,7 +106,7 @@ def dinc_prepare_inputs(ligand_file, receptor_files):
     dinc_run_info.receptors = receptor_pdbqt_paths
     logger.info("Finished preparing files and inputs!")
     logger.info("-------------------------------------")
-    return dinc_run_info, ligand, fragment, frag_files, receptors
+    return dinc_run_info, ligand, fragment, frag_files, receptors, leaf_files
 
 
 
