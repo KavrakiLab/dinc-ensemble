@@ -456,6 +456,7 @@ def select_root_atom(lgd,
             res_df, leaf_idx = dinc_probe_vina(probe_pdbqts, str(rec_fname), 
                 str(probe_out_file), str(bbox_fname),
                 4,  20, 0, 10, 10, 0, 4)
+            res_df.to_csv(str(probe_dir / "probe_results.csv"))
             root_name = dince_frag.leaf_frags[leaf_idx].allAtoms[0].name
         else:
             raise ValueError("DincError: Invalid automatic root selection protocol.")
