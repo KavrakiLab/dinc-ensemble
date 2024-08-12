@@ -66,7 +66,7 @@ class _LigandPDBLoader(LigandLoader):
                 or line.startswith("HETATM")
                 or line.startswith("CONECT")
             ):
-                print(line)
+                print(line, end='')
         fileinput.close()
 
         # 2 - load with pybel and convert to the mol2
