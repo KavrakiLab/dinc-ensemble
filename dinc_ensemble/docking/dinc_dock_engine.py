@@ -134,7 +134,7 @@ def dinc_run_single_vina(ligand_path_pdbqt: str,
     if randomize:
         ligand_path_pdbqt_str = str(ligand_path_pdbqt)
         rand_fname = ligand_path_pdbqt_str[:ligand_path_pdbqt_str.rfind(".")]+"_rand.pdbqt"
-        print(rand_fname)
+        #print(rand_fname)
         #if not Path(rand_fname).exists():
         os.system("vina --ligand {lig} --receptor {rec} \
             --randomize_only --out {out_file} --config {box} --verbosity 0".format(
