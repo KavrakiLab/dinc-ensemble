@@ -290,7 +290,8 @@ def final_processing_results(task_directories,
     cluster_conformations(all_confs)
     df_results["clust_nrg_rank"] = df_results["confs"].apply(lambda x: x.clust_nrg_rank)
     df_results["clust_size_rank"] = df_results["confs"].apply(lambda x: x.clust_size_rank)
-    df_results = df_results.drop_duplicates(["clust_size_rank"]).reset_index(drop=True)
+    # do not drop duplicates because they might have good RMSDs!
+    #df_results = df_results.drop_duplicates(["clust_size_rank"]).reset_index(drop=True)
    
     # STEP 3 calculate the rmsds
     ref_ligand = original_ligand.molkit_molecule
